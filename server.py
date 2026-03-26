@@ -7,11 +7,12 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 
-PORT = int(os.environ.get("PORT", 8000))   # Railway injects PORT automatically
+PORT    = int(os.environ.get("PORT", 8000))
+BASE    = Path(__file__).parent            # always the quiz/ directory
 
 app = FastAPI()
 
-with open("questions.json") as f:
+with open(BASE / "questions.json") as f:
     QUESTIONS = json.load(f)["questions"]
 
 
@@ -169,19 +170,19 @@ async def health():
 
 @app.get("/")
 async def player_page():
-    return FileResponse("player.html")
+    return FileResponse(BASE / "player.html")
 
 
 @app.get("/host")
 async def host_page():
-    return FileResponse("host.html")
+    return FileResponse(BASE / "host.html")
 
 
 @app.get("/logo.png")
 async def logo():
-    p = Path("logo.png")
+    p = BASE / "logo.png"
     if p.exists():
-        return FileResponse("logo.png", media_type="image/png")
+        return FileResponse(p, media_type="image/png")
     return JSONResponse({"error": "logo not found"}, status_code=404)
 
 
