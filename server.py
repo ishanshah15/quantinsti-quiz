@@ -162,6 +162,11 @@ def _build_question_msg() -> dict:
 
 # ── routes ────────────────────────────────────────────────────────────────────
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.get("/")
 async def player_page():
     return FileResponse("player.html")
