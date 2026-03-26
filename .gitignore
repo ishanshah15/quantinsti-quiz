@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+server.log
+nohup.out
+.env
+push_to_github.sh
+push_to_github.py

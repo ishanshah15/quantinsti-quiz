@@ -1,0 +1,114 @@
+{
+  "questions": [
+    {
+      "question": "What does the Sharpe Ratio measure in portfolio management?",
+      "options": [
+        "Total portfolio return over a period",
+        "Risk-adjusted return relative to a risk-free rate",
+        "The correlation between two assets",
+        "Maximum drawdown of a portfolio"
+      ],
+      "correct": 1,
+      "time_limit": 20
+    },
+    {
+      "question": "Which Python library is the go-to tool for data manipulation and analysis in quantitative finance?",
+      "options": [
+        "NumPy",
+        "Matplotlib",
+        "Pandas",
+        "SciPy"
+      ],
+      "correct": 2,
+      "time_limit": 20
+    },
+    {
+      "question": "What is 'backtesting' in algorithmic trading?",
+      "options": [
+        "Testing a live strategy with minimal capital",
+        "Reviewing broker transaction logs",
+        "Manually reviewing past trades",
+        "Evaluating a strategy on historical data to measure performance"
+      ],
+      "correct": 3,
+      "time_limit": 20
+    },
+    {
+      "question": "What does 'beta' measure in finance?",
+      "options": [
+        "Expected dividend growth rate",
+        "Sensitivity of an asset's returns to market movements",
+        "A stock's price-to-earnings ratio",
+        "The risk-free rate of return"
+      ],
+      "correct": 1,
+      "time_limit": 20
+    },
+    {
+      "question": "What is 'slippage' in trading?",
+      "options": [
+        "A broker's commission fee",
+        "Overnight holding charges",
+        "The difference between the expected and actual execution price",
+        "Loss due to currency conversion"
+      ],
+      "correct": 2,
+      "time_limit": 20
+    },
+    {
+      "question": "What does VWAP stand for?",
+      "options": [
+        "Volatility Weighted Asset Position",
+        "Variable Weighted Average Price",
+        "Value Weighted Arbitrage Pricing",
+        "Volume Weighted Average Price"
+      ],
+      "correct": 3,
+      "time_limit": 20
+    },
+    {
+      "question": "Which of the following best describes a 'pairs trading' strategy?",
+      "options": [
+        "Trading two assets simultaneously in the same direction",
+        "Buying one correlated asset and shorting another to profit from divergence",
+        "Executing trades via two different brokers simultaneously",
+        "Trading only currency pairs in the forex market"
+      ],
+      "correct": 1,
+      "time_limit": 20
+    },
+    {
+      "question": "What does 'alpha' represent in portfolio management?",
+      "options": [
+        "Total volatility of the portfolio",
+        "Market risk of the portfolio",
+        "Excess return generated above the benchmark",
+        "The portfolio's dividend income"
+      ],
+      "correct": 2,
+      "time_limit": 20
+    },
+    {
+      "question": "Which of the following is NOT a type of standard order in financial markets?",
+      "options": [
+        "Limit Order",
+        "Market Order",
+        "Stop Order",
+        "Gradient Order"
+      ],
+      "correct": 3,
+      "time_limit": 20
+    },
+    {
+      "question": "In machine learning for finance, what is 'overfitting'?",
+      "options": [
+        "When a model performs well on both training and unseen data",
+        "When a model learns the training data too well, failing on new data",
+        "When too many features are removed during feature selection",
+        "When a model is trained on insufficient data"
+      ],
+      "correct": 1,
+      "time_limit": 20
+    }
+  ]
+}
