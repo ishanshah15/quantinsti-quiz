@@ -346,7 +346,12 @@ async def ws_player(websocket: WebSocket):
     except WebSocketDisconnect:
         if name:
             player_ws.pop(name, None)
+            game.players.pop(name, None)
             await _to_host({"type": "player_left", "name": name, "count": len(player_ws)})
+            # If everyone remaining has now answered, end the question
+            if game.phase == "question" and len(game.players) > 0:
+                if all(p["answered"] for p in game.players.values()):
+                    await end_question()
 
 
 if __name__ == "__main__":
