@@ -1,9 +1,10 @@
 import asyncio
+import hashlib
 import json
 import os
 import time
 from pathlib import Path
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 
@@ -12,8 +13,16 @@ BASE    = Path(__file__).parent            # always the quiz/ directory
 
 app = FastAPI()
 
+ADMIN_USER = "admin"
+ADMIN_PASS = "pass@123"
+HOST_TOKEN = hashlib.sha256(f"{ADMIN_USER}:{ADMIN_PASS}:qi-quiz".encode()).hexdigest()[:32]
+
 with open(BASE / "questions.json") as f:
-    QUESTIONS = json.load(f)["questions"]
+    _default_questions = json.load(f)["questions"]
+
+quizzes: dict[str, list] = {"Default": _default_questions}
+active_quiz_name: str = "Default"
+QUESTIONS: list = _default_questions
 
 
 class Game:
@@ -93,13 +102,17 @@ async def end_question():
     time_limit = q.get("time_limit", 20)
     answer_counts = [0, 0, 0, 0]
 
+    points_earned: dict[str, int] = {}
     for name, ans in game.answers.items():
         if 0 <= ans <= 3:
             answer_counts[ans] += 1
         if ans == correct and name in game.players:
             elapsed = time.time() - game.q_start_time
-            speed_bonus = int(1000 * max(0.0, 1 - elapsed / time_limit))
-            game.players[name]["score"] += 1000 + speed_bonus
+            base = 500
+            speed_bonus = int(500 * max(0.0, 1 - elapsed / time_limit))
+            earned = base + speed_bonus
+            game.players[name]["score"] += earned
+            points_earned[name] = earned
 
     await _broadcast(
         {
@@ -107,6 +120,7 @@ async def end_question():
             "correct": correct,
             "correct_text": q["options"][correct],
             "answer_counts": answer_counts,
+            "points_earned": points_earned,
         },
         include_host=True,
     )
@@ -178,6 +192,45 @@ async def host_page():
     return FileResponse(BASE / "host.html")
 
 
+@app.post("/api/host-login")
+async def api_host_login(request: Request):
+    data = await request.json()
+    if data.get("username") == ADMIN_USER and data.get("password") == ADMIN_PASS:
+        return {"token": HOST_TOKEN}
+    return JSONResponse({"error": "Invalid username or password"}, status_code=401)
+
+
+@app.get("/api/quizzes")
+async def api_list_quizzes():
+    return {
+        "quizzes": [{"name": n, "count": len(q)} for n, q in quizzes.items()],
+        "active": active_quiz_name,
+    }
+
+
+@app.post("/api/quiz")
+async def api_upload_quiz(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+    name = str(data.get("name", "")).strip()
+    if not name:
+        return JSONResponse({"error": "Quiz name is required"}, status_code=400)
+    questions = data.get("questions")
+    if not isinstance(questions, list) or not questions:
+        return JSONResponse({"error": "'questions' must be a non-empty array"}, status_code=400)
+    for i, q in enumerate(questions):
+        if not isinstance(q.get("question"), str) or not str(q["question"]).strip():
+            return JSONResponse({"error": f"Question {i+1}: missing 'question' text"}, status_code=400)
+        if not isinstance(q.get("options"), list) or len(q["options"]) != 4:
+            return JSONResponse({"error": f"Question {i+1}: must have exactly 4 options"}, status_code=400)
+        if q.get("correct") not in (0, 1, 2, 3):
+            return JSONResponse({"error": f"Question {i+1}: 'correct' must be 0, 1, 2, or 3"}, status_code=400)
+    quizzes[name] = questions
+    return {"ok": True, "name": name, "count": len(questions)}
+
+
 @app.get("/logo.png")
 async def logo():
     p = BASE / "logo.png"
@@ -189,7 +242,10 @@ async def logo():
 # ── host websocket ────────────────────────────────────────────────────────────
 
 @app.websocket("/ws/host")
-async def ws_host(websocket: WebSocket):
+async def ws_host(websocket: WebSocket, token: str = Query(default="")):
+    if token != HOST_TOKEN:
+        await websocket.close(code=1008, reason="Unauthorized")
+        return
     global host_ws
     await websocket.accept()
     host_ws = websocket
@@ -224,6 +280,14 @@ async def ws_host(websocket: WebSocket):
 
             elif action == "skip_timer" and game.phase == "question":
                 await end_question()
+
+            elif action == "select_quiz" and game.phase == "waiting":
+                global QUESTIONS, active_quiz_name
+                qname = data.get("name", "")
+                if qname in quizzes:
+                    active_quiz_name = qname
+                    QUESTIONS = quizzes[qname]
+                    await _send(websocket, {"type": "quiz_selected", "name": qname, "count": len(QUESTIONS)})
 
             elif action == "reset":
                 game.reset()

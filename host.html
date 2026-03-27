@@ -19,7 +19,6 @@
       --red:     #ef4444;
       --text:    #eef2ff;
       --muted:   #7b8cb8;
-      --a: #dc2626; --b: #2563eb; --c: #d97706; --d: #16a34a;
       --r: 14px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +30,7 @@
       padding: 14px 32px; background: var(--surface);
       border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
     }
-    .logo-img  { height: 36px; object-fit: contain; }
+    .logo-img  { height: 72px; object-fit: contain; }
     .host-badge {
       background: rgba(37,99,235,.2); border: 1px solid rgba(37,99,235,.4);
       color: #93c5fd; padding: 4px 14px; border-radius: 100px;
@@ -140,15 +139,14 @@
     .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .opt-tile {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 18px; border-radius: 10px; color: #fff;
+      padding: 14px 18px; border-radius: 10px; color: var(--text);
       font-size: 15px; font-weight: 600;
+      background: var(--s2); border: 1px solid var(--border);
     }
-    .opt-tile.a{background:var(--a)} .opt-tile.b{background:var(--b)}
-    .opt-tile.c{background:var(--c)} .opt-tile.d{background:var(--d)}
     .opt-lbl {
-      width: 30px; height: 30px; background: rgba(0,0,0,.22);
+      width: 30px; height: 30px; background: rgba(255,255,255,.1);
       border-radius: 6px; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 900; flex-shrink: 0;
+      font-size: 13px; font-weight: 900; flex-shrink: 0; color: var(--muted);
     }
 
     .ans-row {
@@ -231,9 +229,95 @@
     .p1 .podium-name  { font-size: 24px; }
 
     .rest-list { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+
+    /* TABS */
+    .tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 22px; border: none; background: transparent;
+      color: var(--muted); font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      border-radius: 8px 8px 0 0; transition: color .15s;
+    }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--primary); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* QUIZ MANAGER */
+    .qm-card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; margin-bottom: 28px; }
+    .qm-active-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .qm-active-label { color: var(--muted); }
+    .qm-active-name { font-weight: 700; color: var(--ph); }
+    .qm-active-count { color: var(--muted); font-size: 13px; }
+    .qm-quiz-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border); min-height: 60px; }
+    .qm-quiz-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 9px;
+      background: var(--s2); border: 1px solid var(--border); transition: border-color .15s;
+    }
+    .qm-quiz-row.is-active { border-color: var(--primary); background: rgba(37,99,235,.1); }
+    .qm-quiz-name { flex: 1; font-weight: 600; font-size: 15px; }
+    .qm-quiz-count { font-size: 12px; color: var(--muted); }
+    .qm-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: .5px;
+      background: rgba(37,99,235,.25); color: #93c5fd;
+      padding: 2px 8px; border-radius: 100px; text-transform: uppercase; white-space: nowrap;
+    }
+    .qm-upload { padding: 20px; border-bottom: 1px solid var(--border); }
+    .qm-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; }
+    .qm-input {
+      width: 100%; padding: 10px 14px; border-radius: 9px;
+      border: 1px solid var(--border); background: var(--s2);
+      color: var(--text); font-size: 14px; font-family: inherit;
+      outline: none; margin-bottom: 10px;
+    }
+    .qm-input:focus { border-color: var(--primary); }
+    .qm-textarea {
+      width: 100%; height: 130px; padding: 12px 14px; border-radius: 9px;
+      border: 1px solid var(--border); background: var(--s2); color: var(--text);
+      font-size: 12px; font-family: 'Courier New', monospace;
+      resize: vertical; outline: none; margin-bottom: 10px;
+    }
+    .qm-textarea:focus { border-color: var(--primary); }
+    .qm-btn-row { display: flex; gap: 10px; }
+    .qm-msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+    .qm-msg.ok  { color: var(--green); }
+    .qm-msg.err { color: var(--red); }
+    .qm-sample { padding: 16px 20px; }
+    .qm-sample summary {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      cursor: pointer; user-select: none; list-style: none;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .qm-sample summary::-webkit-details-marker { display: none; }
+    .qm-sample summary::before { content: '▶'; font-size: 10px; transition: transform .2s; }
+    .qm-sample[open] summary::before { transform: rotate(90deg); }
+    .qm-sample pre {
+      margin-top: 14px; padding: 16px; background: #05070f;
+      border-radius: 9px; border: 1px solid var(--border);
+      font-size: 12px; color: #7dd3fc; overflow-x: auto; line-height: 1.75; white-space: pre;
+    }
   </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:44px 40px;width:100%;max-width:380px;text-align:center;">
+    <img src="/logo.png" style="height:64px;display:block;margin:0 auto 24px;" onerror="this.style.display='none'">
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Host Login</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:28px;">Sign in to access the host panel</p>
+    <input id="login-user" class="qm-input" type="text" placeholder="Username" autocomplete="username">
+    <input id="login-pass" class="qm-input" type="password" placeholder="Password" autocomplete="current-password"
+           style="margin-bottom:20px;" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
+    <div id="login-err" style="color:var(--red);font-size:13px;margin-top:14px;min-height:18px;"></div>
+  </div>
+</div>
 
 <!-- COUNTDOWN OVERLAY -->
 <div class="countdown-overlay" id="cd-overlay">
@@ -265,13 +349,80 @@
       <div class="url" id="join-url">—</div>
     </div>
 
-    <div class="players-card">
-      <div id="p-count-bar" style="display:none; align-items:center; justify-content:space-between; margin-bottom:16px;">
-        <span style="font-size:15px; font-weight:700; color:var(--muted);">Players joined</span>
-        <span id="p-count" style="font-size:28px; font-weight:900; color:var(--ph);">0</span>
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="players" onclick="switchTab('players')">Players</button>
+      <button class="tab-btn" data-tab="quiz" onclick="switchTab('quiz')">Quiz Manager</button>
+    </div>
+
+    <!-- Players tab -->
+    <div class="tab-panel active" data-tab="players">
+      <div class="players-card">
+        <div id="p-count-bar" style="display:none; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <span style="font-size:15px; font-weight:700; color:var(--muted);">Players joined</span>
+          <span id="p-count" style="font-size:28px; font-weight:900; color:var(--ph);">0</span>
+        </div>
+        <div class="players-grid" id="p-grid">
+          <div class="empty-hint" id="p-empty">Waiting for players to join…</div>
+        </div>
       </div>
-      <div class="players-grid" id="p-grid">
-        <div class="empty-hint" id="p-empty">Waiting for players to join…</div>
+    </div>
+
+    <!-- Quiz Manager tab -->
+    <div class="tab-panel" data-tab="quiz">
+      <div class="qm-card">
+
+        <!-- Active quiz indicator -->
+        <div class="qm-active-bar">
+          <span class="qm-active-label">Active quiz:</span>
+          <span class="qm-active-name" id="active-quiz-name">Default</span>
+          <span class="qm-active-count" id="active-quiz-count"></span>
+        </div>
+
+        <!-- Quiz list -->
+        <div class="qm-quiz-list" id="quiz-list">
+          <div style="color:var(--muted);font-size:13px;padding:8px 4px;">Loading quizzes…</div>
+        </div>
+
+        <!-- Upload form -->
+        <div class="qm-upload">
+          <div class="qm-section-title">Upload New Quiz</div>
+          <input class="qm-input" id="quiz-name-input" type="text" placeholder="Quiz name (e.g. Finance Quiz 2)">
+          <textarea class="qm-textarea" id="quiz-json" placeholder="Paste quiz JSON here, or choose a file below…"></textarea>
+          <input type="file" id="quiz-file" accept=".json" style="display:none" onchange="loadQuizFile(this)">
+          <div class="qm-btn-row">
+            <button class="btn btn-outline" style="width:auto" onclick="document.getElementById('quiz-file').click()">Choose File</button>
+            <button class="btn btn-primary" style="flex:1;padding:12px 20px;font-size:15px;" onclick="uploadQuiz()">Upload &amp; Select</button>
+          </div>
+          <div class="qm-msg" id="upload-msg"></div>
+        </div>
+
+        <!-- Sample format -->
+        <details class="qm-sample">
+          <summary>Sample JSON format</summary>
+          <pre>{
+  "questions": [
+    {
+      "question": "What does the Sharpe Ratio measure?",
+      "options": [
+        "Return per unit of total risk",
+        "Return per unit of market risk",
+        "Portfolio beta",
+        "Maximum drawdown"
+      ],
+      "correct": 0,
+      "time_limit": 20
+    },
+    {
+      "question": "Which Greeks measures sensitivity to volatility?",
+      "options": ["Delta", "Gamma", "Vega", "Theta"],
+      "correct": 2,
+      "time_limit": 15
+    }
+  ]
+}</pre>
+        </details>
+
       </div>
     </div>
 
@@ -339,25 +490,63 @@
 </div>
 
 <script>
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ws    = new WebSocket(`${proto}//${location.host}/ws/host`);
-
+  let ws         = null;
   let playerList = [];
   let timerIv    = null;
   let qStart     = 0;
 
   document.getElementById('join-url').textContent = location.origin + '/';
 
-  ws.onopen  = () => setConn(true);
-  ws.onclose = () => setConn(false);
-  ws.onmessage = e => handle(JSON.parse(e.data));
+  // Auto-connect if token is cached from a previous session
+  const _cached = sessionStorage.getItem('hostToken');
+  if (_cached) connectWS(_cached); else showLogin();
+
+  function showLogin() {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+
+  async function doLogin() {
+    const user  = document.getElementById('login-user').value.trim();
+    const pass  = document.getElementById('login-pass').value;
+    const errEl = document.getElementById('login-err');
+    errEl.textContent = '';
+    if (!user || !pass) { errEl.textContent = 'Enter username and password.'; return; }
+    try {
+      const res  = await fetch('/api/host-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass }),
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Login failed.'; return; }
+      sessionStorage.setItem('hostToken', data.token);
+      document.getElementById('login-overlay').style.display = 'none';
+      connectWS(data.token);
+    } catch (e) {
+      errEl.textContent = 'Login failed: ' + e.message;
+    }
+  }
+
+  function connectWS(token) {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws/host?token=${token}`);
+    ws.onopen    = () => { setConn(true); loadQuizList(); };
+    ws.onclose   = (e) => {
+      setConn(false);
+      if (e.code === 1008) {
+        sessionStorage.removeItem('hostToken');
+        showLogin();
+      }
+    };
+    ws.onmessage = e => handle(JSON.parse(e.data));
+  }
 
   function setConn(ok) {
     document.getElementById('conn-dot').className = 'conn-dot' + (ok ? '' : ' off');
     document.getElementById('conn-label').textContent = ok ? 'Connected' : 'Disconnected';
   }
 
-  function send(obj) { ws.send(JSON.stringify(obj)); }
+  function send(obj) { if (ws) ws.send(JSON.stringify(obj)); }
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -386,10 +575,11 @@
         document.getElementById('a-done').textContent = msg.answered;
         document.getElementById('a-tot').textContent  = msg.total;
         break;
-      case 'results':   showResults(msg); break;
-      case 'leaderboard': showLB(msg.leaderboard); break;
-      case 'game_over':   showPodium(msg.leaderboard); break;
-      case 'reset':       location.reload(); break;
+      case 'results':       showResults(msg); break;
+      case 'leaderboard':   showLB(msg.leaderboard); break;
+      case 'game_over':     showPodium(msg.leaderboard); break;
+      case 'reset':         location.reload(); break;
+      case 'quiz_selected': loadQuizList(); break;
     }
   }
 
@@ -455,20 +645,20 @@
     clearInterval(timerIv);
     show('results');
     const opts = ['A','B','C','D'];
-    const cols = ['var(--a)','var(--b)','var(--c)','var(--d)'];
     document.getElementById('correct-ans').textContent = `${opts[msg.correct]}: ${msg.correct_text}`;
     const total = msg.answer_counts.reduce((a,b)=>a+b,0);
     const barsEl = document.getElementById('bars');
     barsEl.innerHTML = '';
     msg.answer_counts.forEach((cnt, i) => {
-      const pct = total > 0 ? (cnt / total * 100) : 0;
-      const ok  = i === msg.correct;
-      const row = document.createElement('div');
+      const pct   = total > 0 ? (cnt / total * 100) : 0;
+      const ok    = i === msg.correct;
+      const color = ok ? 'var(--green)' : '#2d3f6e';
+      const row   = document.createElement('div');
       row.className = 'bar-row' + (ok ? ' is-correct' : '');
       row.innerHTML = `
-        <div class="bar-lbl" style="background:${cols[i]}">${opts[i]}</div>
+        <div class="bar-lbl" style="background:${color};color:${ok ? '#fff' : 'var(--muted)'}">${opts[i]}</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0%;background:${cols[i]}" data-pct="${pct}"></div>
+          <div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}"></div>
         </div>
         <div class="bar-cnt">${cnt}</div>`;
       barsEl.appendChild(row);
@@ -494,6 +684,110 @@
       el.appendChild(row);
     });
   }
+
+  // ── Quiz Manager ────────────────────────────────────────────────────────────
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === name));
+  }
+
+  async function loadQuizList() {
+    try {
+      const res  = await fetch('/api/quizzes');
+      const data = await res.json();
+      renderQuizList(data.quizzes, data.active);
+    } catch (e) {
+      document.getElementById('quiz-list').innerHTML =
+        `<div style="color:var(--red);font-size:13px;">Failed to load quizzes</div>`;
+    }
+  }
+
+  function renderQuizList(quizList, active) {
+    document.getElementById('active-quiz-name').textContent = active;
+    const activeQ = quizList.find(q => q.name === active);
+    document.getElementById('active-quiz-count').textContent =
+      activeQ ? `— ${activeQ.count} questions` : '';
+
+    const el = document.getElementById('quiz-list');
+    el.innerHTML = '';
+    quizList.forEach(q => {
+      const row = document.createElement('div');
+      row.className = 'qm-quiz-row' + (q.name === active ? ' is-active' : '');
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'qm-quiz-name';
+      nameEl.textContent = q.name;
+
+      const countEl = document.createElement('div');
+      countEl.className = 'qm-quiz-count';
+      countEl.textContent = `${q.count} questions`;
+
+      row.appendChild(nameEl);
+      row.appendChild(countEl);
+
+      if (q.name === active) {
+        const badge = document.createElement('div');
+        badge.className = 'qm-badge';
+        badge.textContent = 'Active';
+        row.appendChild(badge);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline';
+        btn.style.cssText = 'width:auto;padding:5px 16px;font-size:12px;';
+        btn.textContent = 'Select';
+        btn.addEventListener('click', () => send({ action: 'select_quiz', name: q.name }));
+        row.appendChild(btn);
+      }
+      el.appendChild(row);
+    });
+  }
+
+  function loadQuizFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('quiz-json').value = e.target.result;
+      const nameInput = document.getElementById('quiz-name-input');
+      if (!nameInput.value.trim()) {
+        nameInput.value = file.name.replace(/\.json$/i, '');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function uploadQuiz() {
+    const nameInput = document.getElementById('quiz-name-input');
+    const jsonInput = document.getElementById('quiz-json');
+    const msgEl     = document.getElementById('upload-msg');
+    msgEl.className = 'qm-msg'; msgEl.textContent = '';
+
+    const name = nameInput.value.trim();
+    if (!name) { msgEl.textContent = 'Please enter a quiz name.'; msgEl.classList.add('err'); return; }
+
+    let parsed;
+    try { parsed = JSON.parse(jsonInput.value.trim()); }
+    catch { msgEl.textContent = 'Invalid JSON — check for syntax errors.'; msgEl.classList.add('err'); return; }
+
+    try {
+      const res    = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, questions: parsed.questions ?? parsed }),
+      });
+      const result = await res.json();
+      if (!res.ok) { msgEl.textContent = result.error || 'Upload failed.'; msgEl.classList.add('err'); return; }
+      msgEl.textContent = `Uploaded "${name}" (${result.count} questions) — selecting now…`;
+      msgEl.classList.add('ok');
+      nameInput.value = ''; jsonInput.value = '';
+      send({ action: 'select_quiz', name });
+    } catch (e) {
+      msgEl.textContent = 'Upload failed: ' + e.message; msgEl.classList.add('err');
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
 
   function showPodium(lb) {
     show('gameover');

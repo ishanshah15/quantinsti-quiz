@@ -19,7 +19,6 @@
       --red:     #ef4444;
       --text:    #eef2ff;
       --muted:   #7b8cb8;
-      --a: #dc2626; --b: #2563eb; --c: #d97706; --d: #16a34a;
       --r: 14px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,7 +37,7 @@
       display: flex; align-items: center; justify-content: center;
       padding-bottom: 24px;
     }
-    .logo-strip img { height: 28px; object-fit: contain; }
+    .logo-strip img { height: 56px; object-fit: contain; }
 
     /* ── JOIN ── */
     #s-join .inner {
@@ -141,19 +140,19 @@
     .ans-btn {
       display: flex; align-items: center; gap: 10px;
       padding: 13px 14px; border-radius: 11px;
-      color: #fff; border: none; cursor: pointer; font-family: inherit;
+      color: var(--text); background: var(--s2);
+      border: 1px solid var(--border); cursor: pointer; font-family: inherit;
       font-size: 14px; font-weight: 700; line-height: 1.3; text-align: left;
-      transition: transform .12s, filter .12s; min-height: 56px;
+      transition: transform .12s, border-color .15s, background .15s; min-height: 56px;
     }
-    .ans-btn:active:not(:disabled) { transform: scale(.95); filter: brightness(.85); }
-    .ans-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .ans-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(37,99,235,.12); }
+    .ans-btn:active:not(:disabled) { transform: scale(.97); }
+    .ans-btn:disabled { opacity: .5; cursor: not-allowed; }
     .ans-btn .btn-lbl {
-      width: 28px; height: 28px; background: rgba(0,0,0,.22);
+      width: 28px; height: 28px; background: rgba(255,255,255,.1);
       border-radius: 6px; display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 900; flex-shrink: 0;
+      font-size: 14px; font-weight: 900; flex-shrink: 0; color: var(--muted);
     }
-    .ans-btn.a{background:var(--a)} .ans-btn.b{background:var(--b)}
-    .ans-btn.c{background:var(--c)} .ans-btn.d{background:var(--d)}
 
     /* Options hidden initially, fade in */
     .ans-grid { opacity: 0; transition: opacity .4s ease; pointer-events: none; }
@@ -485,8 +484,9 @@
     document.getElementById('res-ans').textContent   = `${opts[ok]}: ${msg.correct_text}`;
 
     const ptsEl = document.getElementById('pts-earned');
-    if (hit && msg.points_earned !== undefined) {
-      ptsEl.textContent = `+${msg.points_earned.toLocaleString()} pts`;
+    const myPts = hit && msg.points_earned ? msg.points_earned[myName] : undefined;
+    if (myPts !== undefined) {
+      ptsEl.textContent = `+${myPts.toLocaleString()} pts`;
     } else {
       ptsEl.textContent = hit ? '+ Points earned!' : '';
     }
