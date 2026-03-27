@@ -154,9 +154,12 @@
       font-size: 14px; font-weight: 900; flex-shrink: 0; color: var(--muted);
     }
 
-    /* Options hidden initially, fade in */
-    .ans-grid { opacity: 0; transition: opacity .4s ease; pointer-events: none; }
-    .ans-grid.revealed { opacity: 1; pointer-events: auto; }
+    /* Options hidden initially — collapse height so question stays centered */
+    .ans-grid {
+      opacity: 0; max-height: 0; overflow: hidden; pointer-events: none;
+      transition: opacity .5s ease, max-height .5s ease;
+    }
+    .ans-grid.revealed { opacity: 1; max-height: 500px; pointer-events: auto; }
 
     /* ── ANSWERED ── */
     #s-answered .inner {
@@ -434,9 +437,9 @@
     grid.classList.remove('revealed');
     document.querySelectorAll('.ans-btn').forEach(b => b.disabled = false);
 
-    // Reveal options after 1.5 seconds (question shows first)
+    // Reveal options after 5 seconds (question shows centered first)
     clearTimeout(revealTimeout);
-    revealTimeout = setTimeout(() => grid.classList.add('revealed'), 1500);
+    revealTimeout = setTimeout(() => grid.classList.add('revealed'), 5000);
 
     qStart = Date.now();
     startTimer(msg.time_limit);
