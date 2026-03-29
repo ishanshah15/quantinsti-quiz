@@ -189,6 +189,7 @@ def _build_question_msg() -> dict:
         "question": q["question"],
         "options": q["options"],
         "time_limit": _effective_time_limit(),
+        "elapsed": time.time() - game.q_start_time,  # seconds already spent on this question
     }
 
 

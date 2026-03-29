@@ -488,11 +488,19 @@
       b.blur();
     });
 
-    // Reveal options after 5 seconds (question shows centered first)
-    clearTimeout(revealTimeout);
-    revealTimeout = setTimeout(() => grid.classList.add('revealed'), 5000);
+    // Offset qStart by how much time already elapsed (catches up timer on reconnect)
+    const elapsed = msg.elapsed || 0;
+    qStart = Date.now() - elapsed * 1000;
 
-    qStart = Date.now();
+    // Reveal options after remaining delay (or immediately if already past 5s)
+    clearTimeout(revealTimeout);
+    const revealDelay = Math.max(0, 5000 - elapsed * 1000);
+    if (revealDelay === 0) {
+      grid.classList.add('revealed');
+    } else {
+      revealTimeout = setTimeout(() => grid.classList.add('revealed'), revealDelay);
+    }
+
     startTimer(msg.time_limit);
   }
 

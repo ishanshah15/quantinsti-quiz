@@ -708,9 +708,15 @@
     const optsGrid = document.querySelector('.opts-grid');
     optsGrid.classList.remove('revealed');
     clearTimeout(optsRevealTimer);
-    optsRevealTimer = setTimeout(() => optsGrid.classList.add('revealed'), 5000);
+    const elapsed = msg.elapsed || 0;
+    const revealDelay = Math.max(0, 5000 - elapsed * 1000);
+    if (revealDelay === 0) {
+      optsGrid.classList.add('revealed');
+    } else {
+      optsRevealTimer = setTimeout(() => optsGrid.classList.add('revealed'), revealDelay);
+    }
 
-    qStart = Date.now();
+    qStart = Date.now() - elapsed * 1000;
     runTimer(msg.time_limit);
   }
 
