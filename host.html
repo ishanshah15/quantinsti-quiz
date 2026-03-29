@@ -83,7 +83,9 @@
       display: flex; align-items: center; justify-content: center;
       text-align: center; animation: pop .3s ease;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      transition: opacity .3s, border-color .3s;
     }
+    .p-chip.disconnected { opacity: .4; border-color: rgba(239,68,68,.3); }
     @keyframes pop { from{transform:scale(.75);opacity:0} to{transform:scale(1);opacity:1} }
     .empty-hint { text-align: center; color: var(--muted); font-size: 14px; padding: 24px; width: 100%; grid-column: 1/-1; }
 
@@ -616,6 +618,9 @@
       case 'player_left':
         removeChip(msg.name);
         break;
+      case 'player_disconnected':
+        dimChip(msg.name);
+        break;
       case 'countdown':
         showCountdown(msg.value);
         break;
@@ -648,13 +653,19 @@
   }
 
   function addChip(name) {
-    if (playerList.includes(name)) return;
+    const existing = document.getElementById(`pc-${name}`);
+    if (existing) { existing.classList.remove('disconnected'); return; }  // reconnected
     playerList.push(name);
     const empty = document.getElementById('p-empty');
     if (empty) empty.remove();
     const c = document.createElement('div');
     c.className = 'p-chip'; c.id = `pc-${name}`; c.textContent = name;
     document.getElementById('p-grid').appendChild(c);
+  }
+
+  function dimChip(name) {
+    const el = document.getElementById(`pc-${name}`);
+    if (el) el.classList.add('disconnected');
   }
 
   function removeChip(name) {

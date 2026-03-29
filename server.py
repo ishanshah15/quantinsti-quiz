@@ -339,12 +339,14 @@ async def ws_player(websocket: WebSocket):
                 if not n:
                     await _send(websocket, {"type": "error", "message": "Please enter your name."})
                     continue
-                # Mid-game reconnection: player already registered but lost connection
-                if n in game.players and n not in player_ws and game.phase != "waiting":
+
+                # Returning player: registered before but lost connection at any phase
+                if n in game.players and n not in player_ws:
                     name = n
                     player_ws[name] = websocket
+                    game.players[name]["answered"] = game.players[name].get("answered", False)
                     await _send(websocket, {"type": "joined", "name": name})
-                    # Restore current game state
+                    # Restore current game state so their screen catches up
                     if game.phase == "question":
                         await _send(websocket, _build_question_msg())
                         if game.players[name].get("answered"):
@@ -356,9 +358,11 @@ async def ws_player(websocket: WebSocket):
                     await _to_host({"type": "player_joined", "name": name, "count": len(player_ws)})
                     continue
 
+                # Existing active connection with that name
                 if n in player_ws:
                     await _send(websocket, {"type": "error", "message": "That name is already taken."})
                     continue
+                # Brand new player — only allowed during waiting phase
                 if game.phase != "waiting":
                     await _send(websocket, {"type": "error", "message": "Game is already in progress."})
                     continue
@@ -391,18 +395,14 @@ async def ws_player(websocket: WebSocket):
     except WebSocketDisconnect:
         if name:
             player_ws.pop(name, None)
-            if game.phase == "waiting":
-                # Before game starts: fully remove the player
-                game.players.pop(name, None)
-                await _to_host({"type": "player_left", "name": name, "count": len(player_ws)})
-            else:
-                # Mid-game: keep score so they can reconnect
-                await _to_host({"type": "player_disconnected", "name": name, "count": len(player_ws)})
-                # End question if all remaining connected players have answered
-                if game.phase == "question":
-                    connected = set(player_ws.keys())
-                    if connected and all(game.players[n]["answered"] for n in connected if n in game.players):
-                        await end_question()
+            # Always keep player in game.players so they can reconnect with their name.
+            # The host sees "disconnected" rather than "left" so the count stays honest.
+            await _to_host({"type": "player_disconnected", "name": name, "count": len(player_ws)})
+            # If all currently-connected players have answered, end the question
+            if game.phase == "question":
+                connected = set(player_ws.keys())
+                if connected and all(game.players[n]["answered"] for n in connected if n in game.players):
+                    await end_question()
 
 
 if __name__ == "__main__":
