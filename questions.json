@@ -65,6 +65,17 @@
       ],
       "correct": 2,
       "time_limit": 40
+    },
+    {
+      "question": "Which task would be the most difficult for AI?",
+      "options": [
+        "Analyzing stock market data.",
+        "Diagnosing a rare medical disease.",
+        "Playing a perfect chess game.",
+        "Applying everyday human common sense."
+      ],
+      "correct": 3,
+      "time_limit": 40
     }
   ]
 }
