@@ -25,15 +25,19 @@ active_quiz_name: str = "Default"
 QUESTIONS: list = _default_questions
 
 
+REVEAL_DELAY = 5  # seconds before answer options are shown to players
+
 class Game:
     def __init__(self):
         self.phase = "waiting"      # waiting | question | results | leaderboard | finished
         self.current_q = -1
         self.players: dict[str, dict] = {}   # name -> {score, answered}
         self.answers: dict[str, int] = {}    # name -> answer index (0-3)
+        self.answer_times: dict[str, float] = {}  # name -> epoch time of answer
         self.q_start_time: float = 0
         self.timer_task: asyncio.Task | None = None
         self.skip_leaderboard: bool = False
+        self.global_time_limit: int | None = None  # overrides per-question time_limit when set
 
     def reset(self):
         if self.timer_task and not self.timer_task.done():
@@ -99,17 +103,24 @@ async def end_question():
 
     q = QUESTIONS[game.current_q]
     correct = q["correct"]
-    time_limit = q.get("time_limit", 20)
+    time_limit = game.global_time_limit or q.get("time_limit", 20)
     answer_counts = [0, 0, 0, 0]
 
+    # Pre-compute per-player elapsed times so scoring is based on when they answered,
+    # not when end_question() runs. Store answer timestamps alongside answers.
+    now = time.time()
     points_earned: dict[str, int] = {}
     for name, ans in game.answers.items():
         if 0 <= ans <= 3:
             answer_counts[ans] += 1
         if ans == correct and name in game.players:
-            elapsed = time.time() - game.q_start_time
+            elapsed = game.answer_times.get(name, now) - game.q_start_time
             base = 500
-            speed_bonus = int(500 * max(0.0, 1 - elapsed / time_limit))
+            # Offset by reveal delay so the full 0-500 bonus range is available
+            # regardless of the configured time_limit.
+            effective_elapsed = max(0.0, elapsed - REVEAL_DELAY)
+            effective_window = max(1.0, time_limit - REVEAL_DELAY)
+            speed_bonus = int(500 * max(0.0, 1 - effective_elapsed / effective_window))
             earned = base + speed_bonus
             game.players[name]["score"] += earned
             points_earned[name] = earned
@@ -149,6 +160,7 @@ async def _do_countdown():
     game.phase = "question"
     game.current_q = 0
     game.answers = {}
+    game.answer_times = {}
     for p in game.players.values():
         p["answered"] = False
     game.q_start_time = time.time()
@@ -156,9 +168,14 @@ async def _do_countdown():
     game.timer_task = asyncio.create_task(_run_timer())
 
 
-async def _run_timer():
+def _effective_time_limit() -> int:
+    """Return the time limit to use: global override if set, else per-question value."""
     q = QUESTIONS[game.current_q]
-    await asyncio.sleep(q.get("time_limit", 20))
+    return game.global_time_limit or q.get("time_limit", 20)
+
+
+async def _run_timer():
+    await asyncio.sleep(_effective_time_limit())
     if game.phase == "question":
         await end_question()
 
@@ -171,7 +188,7 @@ def _build_question_msg() -> dict:
         "total": len(QUESTIONS),
         "question": q["question"],
         "options": q["options"],
-        "time_limit": q.get("time_limit", 20),
+        "time_limit": _effective_time_limit(),
     }
 
 
@@ -254,6 +271,7 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
         "type": "connected",
         "phase": game.phase,
         "players": [{"name": n, "score": p["score"]} for n, p in game.players.items()],
+        "global_time_limit": game.global_time_limit,
     })
 
     try:
@@ -268,6 +286,7 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
             elif action == "next_question" and game.phase == "leaderboard":
                 game.current_q += 1
                 game.answers = {}
+                game.answer_times = {}
                 for p in game.players.values():
                     p["answered"] = False
                 game.phase = "question"
@@ -280,6 +299,11 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
 
             elif action == "skip_timer" and game.phase == "question":
                 await end_question()
+
+            elif action == "set_time_limit" and game.phase == "waiting":
+                tl = data.get("time_limit")
+                game.global_time_limit = int(tl) if tl else None
+                await _send(websocket, {"type": "time_limit_set", "global_time_limit": game.global_time_limit})
 
             elif action == "select_quiz" and game.phase == "waiting":
                 global QUESTIONS, active_quiz_name
@@ -337,6 +361,7 @@ async def ws_player(websocket: WebSocket):
                     continue
                 game.players[name]["answered"] = True
                 game.answers[name] = ans
+                game.answer_times[name] = time.time()
                 await _send(websocket, {"type": "answer_received", "answer": ans})
                 answered = sum(1 for p in game.players.values() if p["answered"])
                 await _to_host({"type": "answer_update", "answered": answered, "total": len(game.players)})

@@ -267,6 +267,17 @@
       background: rgba(37,99,235,.25); color: #93c5fd;
       padding: 2px 8px; border-radius: 100px; text-transform: uppercase; white-space: nowrap;
     }
+    .qm-time-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--border); gap: 12px;
+    }
+    .qm-time-label { font-size: 14px; color: var(--muted); font-weight: 600; }
+    .qm-time-select {
+      padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--s2); color: var(--text); font-size: 14px; font-family: inherit;
+      outline: none; cursor: pointer;
+    }
+    .qm-time-select:focus { border-color: var(--primary); }
     .qm-upload { padding: 20px; border-bottom: 1px solid var(--border); }
     .qm-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; }
     .qm-input {
@@ -377,6 +388,21 @@
           <span class="qm-active-label">Active quiz:</span>
           <span class="qm-active-name" id="active-quiz-name">Default</span>
           <span class="qm-active-count" id="active-quiz-count"></span>
+        </div>
+
+        <!-- Global time limit override -->
+        <div class="qm-time-row">
+          <span class="qm-time-label">Time per question</span>
+          <select class="qm-time-select" id="time-limit-select" onchange="setTimeLimit(this.value)">
+            <option value="">Per question (from JSON)</option>
+            <option value="15">15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="45">45 seconds</option>
+            <option value="60">60 seconds</option>
+            <option value="90">90 seconds</option>
+            <option value="120">120 seconds</option>
+          </select>
         </div>
 
         <!-- Quiz list -->
@@ -499,7 +525,12 @@
 
   // Auto-connect if token is cached from a previous session
   const _cached = sessionStorage.getItem('hostToken');
-  if (_cached) connectWS(_cached); else showLogin();
+  if (_cached) {
+    document.getElementById('login-overlay').style.display = 'none';
+    connectWS(_cached);
+  } else {
+    showLogin();
+  }
 
   function showLogin() {
     document.getElementById('login-overlay').style.display = 'flex';
@@ -575,12 +606,24 @@
         document.getElementById('a-done').textContent = msg.answered;
         document.getElementById('a-tot').textContent  = msg.total;
         break;
-      case 'results':       showResults(msg); break;
-      case 'leaderboard':   showLB(msg.leaderboard); break;
-      case 'game_over':     showPodium(msg.leaderboard); break;
-      case 'reset':         location.reload(); break;
-      case 'quiz_selected': loadQuizList(); break;
+      case 'results':        showResults(msg); break;
+      case 'leaderboard':    showLB(msg.leaderboard); break;
+      case 'game_over':      showPodium(msg.leaderboard); break;
+      case 'reset':          location.reload(); break;
+      case 'quiz_selected':  loadQuizList(); break;
+      case 'connected':      syncTimeLimitUI(msg.global_time_limit); break;
+      case 'time_limit_set': syncTimeLimitUI(msg.global_time_limit); break;
     }
+  }
+
+  function syncTimeLimitUI(val) {
+    const sel = document.getElementById('time-limit-select');
+    if (!sel) return;
+    sel.value = val ? String(val) : '';
+  }
+
+  function setTimeLimit(val) {
+    send({ action: 'set_time_limit', time_limit: val ? parseInt(val) : null });
   }
 
   function addChip(name) {

@@ -1,114 +1,70 @@
 {
   "questions": [
     {
-      "question": "What does the Sharpe Ratio measure in portfolio management?",
+      "question": "In a multi-agent virtual quant team, which agent is primarily responsible for reviewing tear sheets, examining Sharpe ratios, and flagging drawdown problems before final delivery?",
       "options": [
-        "Total portfolio return over a period",
-        "Risk-adjusted return relative to a risk-free rate",
-        "The correlation between two assets",
-        "Maximum drawdown of a portfolio"
+        "Performance Analyst",
+        "Hypothesis Refiner",
+        "Assembler",
+        "Data Scout"
+      ],
+      "correct": 0,
+      "time_limit": 60
+    },
+    {
+      "question": "A standard risk 'kill switch' monitors whether any single outgoing order is too large. Which algorithmic behavior easily bypasses this and still causes catastrophic damage?",
+      "options": [
+        "A delayed VWAP (Volume Weighted Average Price) calculation.",
+        "Submitting many tiny orders in rapid succession.",
+        "Sending one oversized block trade.",
+        "Setting an exceptionally wide stop-loss."
       ],
       "correct": 1,
-      "time_limit": 20
+      "time_limit": 55
     },
     {
-      "question": "Which Python library is the go-to tool for data manipulation and analysis in quantitative finance?",
+      "question": "Which of the following options is a clear sign of overfitting of strategy parameters?",
       "options": [
-        "NumPy",
-        "Matplotlib",
-        "Pandas",
-        "SciPy"
-      ],
-      "correct": 2,
-      "time_limit": 20
-    },
-    {
-      "question": "What is 'backtesting' in algorithmic trading?",
-      "options": [
-        "Testing a live strategy with minimal capital",
-        "Reviewing broker transaction logs",
-        "Manually reviewing past trades",
-        "Evaluating a strategy on historical data to measure performance"
+        "Train Data Set Sharpe 1.5; Test Data Set Sharpe 1.3",
+        "Train Data Set Sharpe 0.8; Test Data Set Sharpe 0.9",
+        "Train Data Set Sharpe 0.8; Test Data Set Sharpe 0.8",
+        "Train Data Set Sharpe 1.5; Test Data Set Sharpe 0.6"
       ],
       "correct": 3,
-      "time_limit": 20
+      "time_limit": 50
     },
     {
-      "question": "What does 'beta' measure in finance?",
+      "question": "What is the false-diversification trap?",
       "options": [
-        "Expected dividend growth rate",
-        "Sensitivity of an asset's returns to market movements",
-        "A stock's price-to-earnings ratio",
-        "The risk-free rate of return"
-      ],
-      "correct": 1,
-      "time_limit": 20
-    },
-    {
-      "question": "What is 'slippage' in trading?",
-      "options": [
-        "A broker's commission fee",
-        "Overnight holding charges",
-        "The difference between the expected and actual execution price",
-        "Loss due to currency conversion"
-      ],
-      "correct": 2,
-      "time_limit": 20
-    },
-    {
-      "question": "What does VWAP stand for?",
-      "options": [
-        "Volatility Weighted Asset Position",
-        "Variable Weighted Average Price",
-        "Value Weighted Arbitrage Pricing",
-        "Volume Weighted Average Price"
+        "Assuming gold has no volatility",
+        "Assuming equal capital means equal risk",
+        "Assuming bonds always beat stocks",
+        "Assuming low correlation stays low in crises"
       ],
       "correct": 3,
-      "time_limit": 20
+      "time_limit": 45
     },
     {
-      "question": "Which of the following best describes a 'pairs trading' strategy?",
+      "question": "Which of the following is a major drawback of a Custom GPT?",
       "options": [
-        "Trading two assets simultaneously in the same direction",
-        "Buying one correlated asset and shorting another to profit from divergence",
-        "Executing trades via two different brokers simultaneously",
-        "Trading only currency pairs in the forex market"
+        "If the instructions are too long, it may lose track of specific details.",
+        "It requires a paid subscription to create a Custom GPT.",
+        "The initial setup and configuration process is highly complex.",
+        "It is inherently difficult to formulate and create the instructions."
       ],
-      "correct": 1,
-      "time_limit": 20
+      "correct": 0,
+      "time_limit": 40
     },
     {
-      "question": "What does 'alpha' represent in portfolio management?",
+      "question": "Which of the following overcomes the drawback of a single Custom GPT?",
       "options": [
-        "Total volatility of the portfolio",
-        "Market risk of the portfolio",
-        "Excess return generated above the benchmark",
-        "The portfolio's dividend income"
+        "Increasing the temperature setting to maximum.",
+        "Providing even more detailed and complex instructions.",
+        "Breaking the task into smaller multi-agent systems.",
+        "Uploading all instructions as one single large text file."
       ],
       "correct": 2,
-      "time_limit": 20
-    },
-    {
-      "question": "Which of the following is NOT a type of standard order in financial markets?",
-      "options": [
-        "Limit Order",
-        "Market Order",
-        "Stop Order",
-        "Gradient Order"
-      ],
-      "correct": 3,
-      "time_limit": 20
-    },
-    {
-      "question": "In machine learning for finance, what is 'overfitting'?",
-      "options": [
-        "When a model performs well on both training and unseen data",
-        "When a model learns the training data too well, failing on new data",
-        "When too many features are removed during feature selection",
-        "When a model is trained on insufficient data"
-      ],
-      "correct": 1,
-      "time_limit": 20
+      "time_limit": 40
     }
   ]
 }
