@@ -145,8 +145,13 @@
     }
     .q-text { font-size: 28px; font-weight: 700; line-height: 1.45; text-align: center; }
 
-    /* Options at bottom */
-    .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    /* Options at bottom — hidden until reveal */
+    .opts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+      opacity: 0; max-height: 0; overflow: hidden; pointer-events: none;
+      transition: opacity .5s ease, max-height .5s ease;
+    }
+    .opts-grid.revealed { opacity: 1; max-height: 300px; pointer-events: auto; }
     .opt-tile {
       display: flex; align-items: center; gap: 12px;
       padding: 14px 18px; border-radius: 10px; color: var(--text);
@@ -529,10 +534,11 @@
 </div>
 
 <script>
-  let ws         = null;
-  let playerList = [];
-  let timerIv    = null;
-  let qStart     = 0;
+  let ws              = null;
+  let playerList      = [];
+  let timerIv         = null;
+  let qStart          = 0;
+  let optsRevealTimer = null;
 
   document.getElementById('join-url').textContent = location.origin + '/';
 
@@ -697,6 +703,13 @@
     ['a','b','c','d'].forEach((_, i) => { document.getElementById(`o-${i}`).textContent = msg.options[i]; });
     document.getElementById('a-done').textContent = '0';
     document.getElementById('a-tot').textContent  = playerList.length;
+
+    // Hide options initially, reveal after 5 seconds (matches player screen)
+    const optsGrid = document.querySelector('.opts-grid');
+    optsGrid.classList.remove('revealed');
+    clearTimeout(optsRevealTimer);
+    optsRevealTimer = setTimeout(() => optsGrid.classList.add('revealed'), 5000);
+
     qStart = Date.now();
     runTimer(msg.time_limit);
   }

@@ -163,6 +163,7 @@
     .ans-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(37,99,235,.12); }
     .ans-btn:active:not(:disabled) { transform: scale(.97); }
     .ans-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .ans-btn.selected { border-color: var(--primary); background: rgba(37,99,235,.2); opacity: 1; }
     .ans-btn .btn-lbl {
       width: 28px; height: 28px; background: rgba(255,255,255,.1);
       border-radius: 6px; display: flex; align-items: center; justify-content: center;
@@ -175,6 +176,13 @@
       transition: opacity .5s ease, max-height .5s ease;
     }
     .ans-grid.revealed { opacity: 1; max-height: 500px; pointer-events: auto; }
+
+    /* Desktop: group question + options together in center instead of pinning options to bottom */
+    @media (min-width: 640px) {
+      #s-question { justify-content: flex-start; }
+      .q-center   { flex: 0 0 auto; margin-top: auto; padding-bottom: 20px; }
+      .ans-grid   { margin-bottom: auto; }
+    }
 
     /* ── ANSWERED ── */
     #s-answered .inner {
@@ -474,7 +482,11 @@
     // Reset and enable buttons; hide options initially
     const grid = document.getElementById('ans-grid');
     grid.classList.remove('revealed');
-    document.querySelectorAll('.ans-btn').forEach(b => b.disabled = false);
+    document.querySelectorAll('.ans-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.remove('selected');
+      b.blur();
+    });
 
     // Reveal options after 5 seconds (question shows centered first)
     clearTimeout(revealTimeout);
@@ -507,7 +519,10 @@
     if (myAns !== -1) return;
     clearTimeout(revealTimeout);
     document.getElementById('ans-grid').classList.add('revealed');
-    document.querySelectorAll('.ans-btn').forEach(b => b.disabled = true);
+    document.querySelectorAll('.ans-btn').forEach((b, i) => {
+      b.disabled = true;
+      if (i === idx) b.classList.add('selected');
+    });
     clearInterval(timerIv);
     // Estimate points for display
     const elapsed = (Date.now() - qStart) / 1000;
