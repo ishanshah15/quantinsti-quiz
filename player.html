@@ -90,6 +90,21 @@
     .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
     @keyframes dp { 0%,80%,100%{opacity:.25;transform:scale(.75)} 40%{opacity:1;transform:scale(1.1)} }
 
+    /* ── RECONNECT BANNER ── */
+    .reconnect-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 150;
+      background: #92400e; color: #fef3c7;
+      padding: 10px 16px; font-size: 14px; font-weight: 600;
+      display: none; align-items: center; justify-content: center; gap: 10px;
+    }
+    .reconnect-banner.show { display: flex; }
+    .reconnect-spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(254,243,199,.3);
+      border-top-color: #fef3c7; border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* ── COUNTDOWN OVERLAY ── */
     .cd-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -235,6 +250,12 @@
 </head>
 <body>
 
+<!-- RECONNECT BANNER -->
+<div class="reconnect-banner" id="reconnect-banner">
+  <div class="reconnect-spinner"></div>
+  <span>Connection lost — reconnecting…</span>
+</div>
+
 <!-- COUNTDOWN OVERLAY -->
 <div class="cd-overlay" id="cd-overlay">
   <div class="cd-num" id="cd-num">3</div>
@@ -264,7 +285,7 @@
     <div class="wait-icon">🚀</div>
     <div class="wait-title">You're in!</div>
     <div class="name-pill" id="name-pill">—</div>
-    <p class="wait-sub">Waiting for the host to start the quiz…</p>
+    <p class="wait-sub">Waiting for other players to join…<br>The host will start the quiz once everyone is in.</p>
     <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   </div>
 </div>
@@ -339,19 +360,36 @@
 </div>
 
 <script>
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ws    = new WebSocket(`${proto}//${location.host}/ws/player`);
+  let ws;
+  let myName       = '';
+  let myAns        = -1;
+  let myPtsLastQ   = 0;
+  let timerIv      = null;
+  let qStart       = 0;
+  let revealTimeout  = null;
+  let reconnectTimer = null;
 
-  let myName    = '';
-  let myAns     = -1;
-  let myPtsLastQ = 0;
-  let timerIv   = null;
-  let qStart    = 0;
-  let revealTimeout = null;
+  function initWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws/player`);
+    ws.onmessage = e => handle(JSON.parse(e.data));
+    ws.onclose   = onWsClose;
+    ws.onerror   = () => {};
+  }
 
-  ws.onmessage = e => handle(JSON.parse(e.data));
+  function onWsClose() {
+    if (!myName) return;  // not joined yet — no need to reconnect
+    document.getElementById('reconnect-banner').classList.add('show');
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      initWS();
+      ws.onopen = () => send({ action: 'join', name: myName });
+    }, 2000);
+  }
 
-  function send(obj) { ws.send(JSON.stringify(obj)); }
+  initWS();
+
+  function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -363,6 +401,7 @@
       case 'joined':
         myName = msg.name;
         document.getElementById('name-pill').textContent = msg.name;
+        document.getElementById('reconnect-banner').classList.remove('show');
         show('waiting');
         break;
       case 'error':

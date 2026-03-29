@@ -339,6 +339,23 @@ async def ws_player(websocket: WebSocket):
                 if not n:
                     await _send(websocket, {"type": "error", "message": "Please enter your name."})
                     continue
+                # Mid-game reconnection: player already registered but lost connection
+                if n in game.players and n not in player_ws and game.phase != "waiting":
+                    name = n
+                    player_ws[name] = websocket
+                    await _send(websocket, {"type": "joined", "name": name})
+                    # Restore current game state
+                    if game.phase == "question":
+                        await _send(websocket, _build_question_msg())
+                        if game.players[name].get("answered"):
+                            await _send(websocket, {"type": "answer_received", "answer": game.answers.get(name, 0)})
+                    elif game.phase in ("results", "leaderboard"):
+                        await _send(websocket, {"type": "leaderboard", "leaderboard": _leaderboard()})
+                    elif game.phase == "finished":
+                        await _send(websocket, {"type": "game_over", "leaderboard": _leaderboard()})
+                    await _to_host({"type": "player_joined", "name": name, "count": len(player_ws)})
+                    continue
+
                 if n in player_ws:
                     await _send(websocket, {"type": "error", "message": "That name is already taken."})
                     continue
@@ -363,20 +380,29 @@ async def ws_player(websocket: WebSocket):
                 game.answers[name] = ans
                 game.answer_times[name] = time.time()
                 await _send(websocket, {"type": "answer_received", "answer": ans})
-                answered = sum(1 for p in game.players.values() if p["answered"])
-                await _to_host({"type": "answer_update", "answered": answered, "total": len(game.players)})
-                if answered >= len(game.players) > 0:
+                # Only count connected players for "all answered" check
+                connected = set(player_ws.keys())
+                answered = sum(1 for n, p in game.players.items() if p["answered"] and n in connected)
+                total = len(connected)
+                await _to_host({"type": "answer_update", "answered": answered, "total": total})
+                if answered >= total > 0:
                     await end_question()
 
     except WebSocketDisconnect:
         if name:
             player_ws.pop(name, None)
-            game.players.pop(name, None)
-            await _to_host({"type": "player_left", "name": name, "count": len(player_ws)})
-            # If everyone remaining has now answered, end the question
-            if game.phase == "question" and len(game.players) > 0:
-                if all(p["answered"] for p in game.players.values()):
-                    await end_question()
+            if game.phase == "waiting":
+                # Before game starts: fully remove the player
+                game.players.pop(name, None)
+                await _to_host({"type": "player_left", "name": name, "count": len(player_ws)})
+            else:
+                # Mid-game: keep score so they can reconnect
+                await _to_host({"type": "player_disconnected", "name": name, "count": len(player_ws)})
+                # End question if all remaining connected players have answered
+                if game.phase == "question":
+                    connected = set(player_ws.keys())
+                    if connected and all(game.players[n]["answered"] for n in connected if n in game.players):
+                        await end_question()
 
 
 if __name__ == "__main__":

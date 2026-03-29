@@ -56,7 +56,15 @@
       border-radius: var(--r); padding: 20px 32px; text-align: center; margin-bottom: 28px;
     }
     .join-box .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .join-box .url-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .join-box .url { font-size: 22px; font-weight: 700; color: #93c5fd; word-break: break-all; }
+    .copy-btn {
+      flex-shrink: 0; background: rgba(37,99,235,.15); border: 1px solid rgba(37,99,235,.35);
+      color: #93c5fd; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: background .15s, color .15s;
+    }
+    .copy-btn:hover { background: rgba(37,99,235,.3); }
+    .copy-btn.copied { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.35); color: var(--green); }
 
     /* Player grid — chips centered both ways */
     .players-card {
@@ -357,7 +365,10 @@
 
     <div class="join-box">
       <div class="lbl">Players join at</div>
-      <div class="url" id="join-url">—</div>
+      <div class="url-row">
+        <div class="url" id="join-url">—</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyJoinUrl()">Copy</button>
+      </div>
     </div>
 
     <!-- Tab bar -->
@@ -578,6 +589,16 @@
   }
 
   function send(obj) { if (ws) ws.send(JSON.stringify(obj)); }
+
+  function copyJoinUrl() {
+    const url = location.origin + '/';
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
