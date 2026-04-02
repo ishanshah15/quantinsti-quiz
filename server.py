@@ -29,19 +29,23 @@ REVEAL_DELAY = 5  # seconds before answer options are shown to players
 
 class Game:
     def __init__(self):
-        self.phase = "waiting"      # waiting | question | results | leaderboard | finished
+        self.phase = "waiting"      # waiting | countdown | question | results | leaderboard | finished
         self.current_q = -1
         self.players: dict[str, dict] = {}   # name -> {score, answered}
         self.answers: dict[str, int] = {}    # name -> answer index (0-3)
         self.answer_times: dict[str, float] = {}  # name -> epoch time of answer
         self.q_start_time: float = 0
         self.timer_task: asyncio.Task | None = None
+        self.countdown_task: asyncio.Task | None = None
         self.skip_leaderboard: bool = False
+        self.last_results: dict | None = None
         self.global_time_limit: int | None = None  # overrides per-question time_limit when set
 
     def reset(self):
         if self.timer_task and not self.timer_task.done():
             self.timer_task.cancel()
+        if self.countdown_task and not self.countdown_task.done():
+            self.countdown_task.cancel()
         self.__init__()
 
 
@@ -125,16 +129,14 @@ async def end_question():
             game.players[name]["score"] += earned
             points_earned[name] = earned
 
-    await _broadcast(
-        {
-            "type": "results",
-            "correct": correct,
-            "correct_text": q["options"][correct],
-            "answer_counts": answer_counts,
-            "points_earned": points_earned,
-        },
-        include_host=True,
-    )
+    game.last_results = {
+        "type": "results",
+        "correct": correct,
+        "correct_text": q["options"][correct],
+        "answer_counts": answer_counts,
+        "points_earned": points_earned,
+    }
+    await _broadcast(game.last_results, include_host=True)
 
     game.skip_leaderboard = False
     for _ in range(80):           # poll every 0.1 s, up to 8 s
@@ -155,17 +157,51 @@ async def end_question():
 
 async def _do_countdown():
     for i in [3, 2, 1]:
+        if game.phase != "countdown":
+            return
         await _broadcast({"type": "countdown", "value": i}, include_host=True)
         await asyncio.sleep(1)
+    if game.phase != "countdown":
+        return
     game.phase = "question"
     game.current_q = 0
     game.answers = {}
     game.answer_times = {}
+    game.last_results = None
     for p in game.players.values():
         p["answered"] = False
     game.q_start_time = time.time()
     await _broadcast(_build_question_msg(), include_host=True)
     game.timer_task = asyncio.create_task(_run_timer())
+    game.countdown_task = None
+
+
+async def _force_stop_game():
+    if game.timer_task and not game.timer_task.done():
+        game.timer_task.cancel()
+    if game.countdown_task and not game.countdown_task.done():
+        game.countdown_task.cancel()
+
+    game.phase = "waiting"
+    game.current_q = -1
+    game.answers = {}
+    game.answer_times = {}
+    game.q_start_time = 0
+    game.skip_leaderboard = False
+    game.last_results = None
+    game.timer_task = None
+    game.countdown_task = None
+    for p in game.players.values():
+        p["score"] = 0
+        p["answered"] = False
+
+    await _broadcast(
+        {
+            "type": "force_stopped",
+            "connected_count": len(player_ws),
+        },
+        include_host=True,
+    )
 
 
 def _effective_time_limit() -> int:
@@ -268,12 +304,31 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
     await websocket.accept()
     host_ws = websocket
 
-    await _send(websocket, {
+    connected_players = list(player_ws.keys())
+    connected_set = set(connected_players)
+    payload = {
         "type": "connected",
         "phase": game.phase,
         "players": [{"name": n, "score": p["score"]} for n, p in game.players.items()],
+        "connected_players": connected_players,
+        "connected_count": len(connected_players),
         "global_time_limit": game.global_time_limit,
-    })
+    }
+
+    if game.phase == "question" and game.current_q >= 0:
+        payload["question"] = _build_question_msg()
+        payload["answered"] = sum(
+            1
+            for n, p in game.players.items()
+            if n in connected_set and p.get("answered")
+        )
+        payload["total_connected"] = len(connected_players)
+    elif game.phase == "results" and game.last_results:
+        payload["results"] = game.last_results
+    elif game.phase in ("leaderboard", "finished"):
+        payload["leaderboard"] = _leaderboard()
+
+    await _send(websocket, payload)
 
     try:
         while True:
@@ -282,12 +337,13 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
 
             if action == "start_game" and game.phase == "waiting":
                 game.phase = "countdown"
-                asyncio.create_task(_do_countdown())
+                game.countdown_task = asyncio.create_task(_do_countdown())
 
             elif action == "next_question" and game.phase == "leaderboard":
                 game.current_q += 1
                 game.answers = {}
                 game.answer_times = {}
+                game.last_results = None
                 for p in game.players.values():
                     p["answered"] = False
                 game.phase = "question"
@@ -318,6 +374,9 @@ async def ws_host(websocket: WebSocket, token: str = Query(default="")):
                 game.reset()
                 player_ws.clear()
                 await _send(websocket, {"type": "reset"})
+
+            elif action == "force_stop" and game.phase != "waiting":
+                await _force_stop_game()
 
     except WebSocketDisconnect:
         host_ws = None

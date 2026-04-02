@@ -442,6 +442,23 @@
       case 'game_over':
         showGameOver(msg.leaderboard);
         break;
+      case 'force_stopped':
+        clearInterval(timerIv);
+        clearTimeout(revealTimeout);
+        hideCountdown();
+        myAns = -1;
+        myPtsLastQ = 0;
+        document.querySelectorAll('.ans-btn').forEach(b => {
+          b.disabled = false;
+          b.classList.remove('selected');
+        });
+        if (myName) {
+          document.getElementById('name-pill').textContent = myName;
+          show('waiting');
+        } else {
+          show('join');
+        }
+        break;
     }
   }
 

@@ -107,6 +107,17 @@
     .btn-outline:hover { border-color: var(--primary); color: #93c5fd; }
     .btn-ghost { background: var(--s2); color: var(--text); border: 1px solid var(--border); margin-top: 20px; }
     .btn-ghost:hover { background: #253060; }
+    .btn-danger {
+      background: rgba(239,68,68,.14);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,.45);
+      padding: 8px 14px;
+      font-size: 13px;
+      width: auto;
+      border-radius: 8px;
+    }
+    .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,.24); color: #fecaca; }
+    .btn-danger:disabled { opacity: .45; cursor: not-allowed; }
 
     /* COUNTDOWN OVERLAY */
     .countdown-overlay {
@@ -354,6 +365,7 @@
 <header>
   <img class="logo-img" src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'">
   <div class="host-badge">Host Panel</div>
+  <button class="btn btn-danger" id="btn-force-stop" onclick="forceStop()" disabled>Force Stop</button>
   <div class="conn-wrap">
     <div class="conn-dot" id="conn-dot"></div>
     <span id="conn-label">Connecting…</span>
@@ -642,10 +654,34 @@
       case 'leaderboard':    showLB(msg.leaderboard); break;
       case 'game_over':      showPodium(msg.leaderboard); break;
       case 'reset':          location.reload(); break;
+      case 'force_stopped':
+        clearInterval(timerIv);
+        clearTimeout(optsRevealTimer);
+        hideCountdown();
+        show('lobby');
+        document.getElementById('a-done').textContent = '0';
+        document.getElementById('a-tot').textContent  = msg.connected_count ?? playerList.length;
+        document.getElementById('p-count').textContent = msg.connected_count ?? playerList.length;
+        document.getElementById('btn-start').disabled = (msg.connected_count ?? playerList.length) < 1;
+        toggleForceStop(false);
+        break;
       case 'quiz_selected':  loadQuizList(); break;
-      case 'connected':      syncTimeLimitUI(msg.global_time_limit); break;
+      case 'connected':
+        clearInterval(timerIv);
+        clearTimeout(optsRevealTimer);
+        hideCountdown();
+        syncTimeLimitUI(msg.global_time_limit);
+        setPlayersFromState(msg.players || [], msg.connected_players || []);
+        hydrateFromConnected(msg);
+        break;
       case 'time_limit_set': syncTimeLimitUI(msg.global_time_limit); break;
     }
+  }
+
+  function toggleForceStop(enabled) {
+    const btn = document.getElementById('btn-force-stop');
+    if (!btn) return;
+    btn.disabled = !enabled;
   }
 
   function syncTimeLimitUI(val) {
@@ -656,6 +692,60 @@
 
   function setTimeLimit(val) {
     send({ action: 'set_time_limit', time_limit: val ? parseInt(val) : null });
+  }
+
+  function setPlayersFromState(players, connectedPlayers) {
+    const grid = document.getElementById('p-grid');
+    const connectedSet = new Set((connectedPlayers || []).map(String));
+    playerList = [];
+    grid.innerHTML = '';
+
+    players.forEach(p => {
+      if (!p || !p.name) return;
+      playerList.push(p.name);
+      const c = document.createElement('div');
+      c.className = 'p-chip' + (connectedSet.has(p.name) ? '' : ' disconnected');
+      c.id = `pc-${p.name}`;
+      c.textContent = p.name;
+      grid.appendChild(c);
+    });
+
+    if (!playerList.length) {
+      grid.innerHTML = '<div class="empty-hint" id="p-empty">Waiting for players to join…</div>';
+    }
+  }
+
+  function hydrateFromConnected(msg) {
+    const phase = msg.phase || 'waiting';
+    const connectedCount = msg.connected_count ?? (msg.connected_players || []).length;
+    document.getElementById('p-count').textContent = connectedCount;
+    document.getElementById('p-count-bar').style.display = (playerList.length || connectedCount) ? 'flex' : 'none';
+
+    if (phase === 'question' && msg.question) {
+      showQuestion(msg.question);
+      document.getElementById('a-done').textContent = msg.answered ?? 0;
+      document.getElementById('a-tot').textContent  = msg.total_connected ?? connectedCount;
+      return;
+    }
+
+    if (phase === 'results' && msg.results) {
+      showResults(msg.results);
+      return;
+    }
+
+    if (phase === 'leaderboard' && msg.leaderboard) {
+      showLB(msg.leaderboard);
+      return;
+    }
+
+    if (phase === 'finished' && msg.leaderboard) {
+      showPodium(msg.leaderboard);
+      return;
+    }
+
+    show('lobby');
+    toggleForceStop(phase !== 'waiting');
+    document.getElementById('btn-start').disabled = phase !== 'waiting' || connectedCount < 1;
   }
 
   function addChip(name) {
@@ -689,6 +779,7 @@
     num.style.animation = 'none';
     num.offsetHeight;
     num.style.animation = '';
+    toggleForceStop(true);
   }
 
   function hideCountdown() {
@@ -697,6 +788,7 @@
 
   function showQuestion(msg) {
     show('question');
+    toggleForceStop(true);
     document.getElementById('q-num').textContent = msg.index + 1;
     document.getElementById('q-tot').textContent = msg.total;
     document.getElementById('q-text').textContent = msg.question;
@@ -738,6 +830,7 @@
   function showResults(msg) {
     clearInterval(timerIv);
     show('results');
+    toggleForceStop(true);
     const opts = ['A','B','C','D'];
     document.getElementById('correct-ans').textContent = `${opts[msg.correct]}: ${msg.correct_text}`;
     const total = msg.answer_counts.reduce((a,b)=>a+b,0);
@@ -764,6 +857,7 @@
 
   function showLB(lb) {
     show('leaderboard');
+    toggleForceStop(true);
     const medals = ['🥇','🥈','🥉'];
     const el = document.getElementById('lb');
     el.innerHTML = '';
@@ -885,6 +979,7 @@
 
   function showPodium(lb) {
     show('gameover');
+    toggleForceStop(true);
     const podiumEl = document.getElementById('podium');
     const restEl   = document.getElementById('rest-list');
     podiumEl.innerHTML = ''; restEl.innerHTML = '';
@@ -921,6 +1016,11 @@
         <div class="lb-score">${p.score.toLocaleString()}</div>`;
       restEl.appendChild(row);
     });
+  }
+
+  function forceStop() {
+    if (!confirm('Force stop the current game and return everyone to the lobby?')) return;
+    send({ action: 'force_stop' });
   }
 </script>
 </body>
