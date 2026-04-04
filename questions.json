@@ -1,81 +1,48 @@
 {
   "questions": [
     {
-      "question": "In a multi-agent virtual quant team, which agent is primarily responsible for reviewing tear sheets, examining Sharpe ratios, and flagging drawdown problems before final delivery?",
+      "question": "Why is the ADF test required in statistical arbitrage?",
       "options": [
-        "Performance Analyst",
-        "Hypothesis Refiner",
-        "Assembler",
-        "Data Scout"
-      ],
-      "correct": 0,
-      "time_limit": 60
-    },
-    {
-      "question": "A standard risk 'kill switch' monitors whether any single outgoing order is too large. Which algorithmic behavior easily bypasses this and still causes catastrophic damage?",
-      "options": [
-        "A delayed VWAP (Volume Weighted Average Price) calculation.",
-        "Submitting many tiny orders in rapid succession.",
-        "Sending one oversized block trade.",
-        "Setting an exceptionally wide stop-loss."
+        "It confirms that the strategy will remain profitable in live markets.",
+        "It helps test whether the spread is stationary, giving statistical evidence beyond just a backtest.",
+        "It identifies the most volatile asset in the pair.",
+        "It measures whether both stocks have high trading volume."
       ],
       "correct": 1,
-      "time_limit": 55
-    },
-    {
-      "question": "Which of the following options is a clear sign of overfitting of strategy parameters?",
-      "options": [
-        "Train Data Set Sharpe 1.5; Test Data Set Sharpe 1.3",
-        "Train Data Set Sharpe 0.8; Test Data Set Sharpe 0.9",
-        "Train Data Set Sharpe 0.8; Test Data Set Sharpe 0.8",
-        "Train Data Set Sharpe 1.5; Test Data Set Sharpe 0.6"
-      ],
-      "correct": 3,
       "time_limit": 50
     },
     {
-      "question": "What is the false-diversification trap?",
+      "question": "What was the main reason for the fallout of LTCM?",
       "options": [
-        "Assuming gold has no volatility",
-        "Assuming equal capital means equal risk",
-        "Assuming bonds always beat stocks",
-        "Assuming low correlation stays low in crises"
+        "Failure to use any quantitative models.",
+        "Overreliance on backtesting.",
+        "Excessive focus on dividend-paying stocks.",
+        "Avoidance of leverage in portfolio construction."
       ],
-      "correct": 3,
+      "correct": 1,
       "time_limit": 45
     },
     {
-      "question": "Which of the following is a major drawback of a Custom GPT?",
+      "question": "Which of the following pairs would be most suitable for pairs trading?",
       "options": [
-        "If the instructions are too long, it may lose track of specific details.",
-        "It requires a paid subscription to create a Custom GPT.",
-        "The initial setup and configuration process is highly complex.",
-        "It is inherently difficult to formulate and create the instructions."
+        "Coca-Cola and PepsiCo",
+        "Tesla and Pfizer",
+        "NVIDIA and Walmart",
+        "ExxonMobil and Netflix"
       ],
       "correct": 0,
-      "time_limit": 40
+      "time_limit": 50
     },
     {
-      "question": "Which of the following overcomes the drawback of a single Custom GPT?",
+      "question": "Which of the following is necessary for pairs trading?",
       "options": [
-        "Increasing the temperature setting to maximum.",
-        "Providing even more detailed and complex instructions.",
-        "Breaking the task into smaller multi-agent systems.",
-        "Uploading all instructions as one single large text file."
+        "High volatility only",
+        "Strong correlation only",
+        "Cointegration only",
+        "Low beta only"
       ],
       "correct": 2,
-      "time_limit": 40
-    },
-    {
-      "question": "Which task would be the most difficult for AI?",
-      "options": [
-        "Analyzing stock market data.",
-        "Diagnosing a rare medical disease.",
-        "Playing a perfect chess game.",
-        "Applying everyday human common sense."
-      ],
-      "correct": 3,
-      "time_limit": 40
+      "time_limit": 45
     }
   ]
 }
