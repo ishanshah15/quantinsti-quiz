@@ -1,45 +1,56 @@
 {
   "questions": [
     {
-      "question": "Why is the ADF test required in statistical arbitrage?",
+      "question": "Amit uploaded QuantInsti's 50-page expense PDF to his Custom GPT, but it gives generic answers. How should he fix this?",
       "options": [
-        "It confirms that the strategy will remain profitable in live markets.",
-        "It helps test whether the spread is stationary, giving statistical evidence beyond just a backtest.",
-        "It identifies the most volatile asset in the pair.",
-        "It measures whether both stocks have high trading volume."
+        "Add instructions to strictly search the uploaded document first.",
+        "Switch back to the standard ChatGPT interface.",
+        "Manually remind the GPT about the PDF in every prompt.",
+        "Give the AI a strict CFO persona."
+      ],
+      "correct": 0,
+      "time_limit": 60
+    },
+    {
+      "question": "Priya's Custom GPT writes Quantra social posts that are too formal. How can she permanently fix the tone?",
+      "options": [
+        "Upload a spreadsheet of past social media analytics.",
+        "Embed 3 perfect post examples in the GPT's core instructions.",
+        "Switch to Claude, which understands marketing better.",
+        "Tell the AI to 'be casual' at the start of every chat."
       ],
       "correct": 1,
       "time_limit": 50
     },
     {
-      "question": "What was the main reason for the fallout of LTCM?",
+      "question": "Vikram in HR wants to automate a task. Which option provides the highest ROI with the lowest risk?",
       "options": [
-        "Failure to use any quantitative models.",
-        "Overreliance on backtesting.",
-        "Excessive focus on dividend-paying stocks.",
-        "Avoidance of leverage in portfolio construction."
+        "Evaluating a candidate's cultural fit from interview transcripts.",
+        "Making the final hiring decision between two engineers.",
+        "Converting messy meeting notes into structured action tables.",
+        "Drafting complex, legally binding termination letters."
+      ],
+      "correct": 2,
+      "time_limit": 45
+    },
+    {
+      "question": "Sneha built an 'Invoice Processor' GPT and wants her Finance team to use it. What is the most efficient way to share it?",
+      "options": [
+        "Email the team her system prompt so they can build it themselves.",
+        "Publish the GPT privately and share the direct link with her team.",
+        "Give the Finance team her ChatGPT login credentials.",
+        "Publish it to the public GPT Store for anyone to download."
       ],
       "correct": 1,
       "time_limit": 45
     },
     {
-      "question": "Which of the following pairs would be most suitable for pairs trading?",
+      "question": "The workshop promises you'll 'never start from a blank page again.' What Custom GPT mechanism makes this possible?",
       "options": [
-        "Coca-Cola and PepsiCo",
-        "Tesla and Pfizer",
-        "NVIDIA and Walmart",
-        "ExxonMobil and Netflix"
-      ],
-      "correct": 0,
-      "time_limit": 50
-    },
-    {
-      "question": "Which of the following is necessary for pairs trading?",
-      "options": [
-        "High volatility only",
-        "Strong correlation only",
-        "Cointegration only",
-        "Low beta only"
+        "The AI automatically scans your local hard drive for style.",
+        "It comes pre-loaded with thousands of business templates.",
+        "Core instructions act as permanent background rules for every chat.",
+        "Custom GPTs use a massive, separate language model."
       ],
       "correct": 2,
       "time_limit": 45
