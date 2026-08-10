@@ -2,105 +2,143 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>QuantInsti Quiz</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:      #07091a;
-      --surface: #0e1530;
-      --s2:      #19254a;
-      --border:  rgba(255,255,255,0.07);
-      --primary: #2563eb;
-      --ph:      #3b7af8;
-      --gold:    #f59e0b;
-      --green:   #22c55e;
-      --red:     #ef4444;
-      --text:    #eef2ff;
-      --muted:   #7b8cb8;
-      --r: 14px;
+      /* QI light palette: navy primary, yellow accent, neutral greys */
+      --bg:      #f8f9fc;
+      --surface: #ffffff;
+      --tint:    #f4f6fa;
+      --s2:      #eaf1fb;
+      --border:  #d0d7e3;
+      --border-soft: #e3e9f2;
+
+      --navy:      #173871;
+      --navy-dark: #0f2650;
+      --navy-mid:  #2e77c9;
+      --navy-soft: #eaf1fb;
+
+      --yellow:      #ffdc57;
+      --yellow-dark: #a67c00;
+
+      --green:      #1b7f4d;
+      --green-dark: #146239;
+      --red:        #c0392b;
+      --red-dark:   #9c0006;
+
+      --primary: var(--navy);
+      --text:    #1a1a2e;
+      --muted:   #667085;
+      --r: 12px;
+      --shadow-sm: 0 1px 2px rgba(23,56,113,.06);
+      --shadow-md: 0 4px 16px rgba(23,56,113,.09);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text); background: var(--bg);
       display: flex; flex-direction: column;
+      /* dvh tracks the real visible viewport as mobile browser chrome shows/hides */
+      height: 100vh; height: 100dvh; overflow-y: auto;
       -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .screen { display: none; flex-direction: column; min-height: 100vh; padding: 20px; }
-    .screen.active { display: flex; }
+    @keyframes screenIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
 
-    .logo-strip {
-      display: flex; align-items: center; justify-content: center;
-      padding-bottom: 24px;
+    /* flex:1 (not min-height:100vh) so the bar above shares the viewport with the
+       active screen instead of both independently claiming a full 100vh */
+    .screen { display: none; flex-direction: column; flex: 1; min-height: 0; padding: 20px; }
+    .screen.active { display: flex; animation: screenIn .3s ease; }
+
+    .logo-strip { display: flex; align-items: center; justify-content: center; padding-bottom: 14px; }
+    .logo-strip img { height: 40px; object-fit: contain; }
+
+    /* Persistent subject/topic bar during answered/results/leaderboard/gameover */
+    .quiz-pill {
+      display: none; align-items: center; justify-content: center; gap: 7px;
+      background: var(--surface); border: 1px solid var(--border-soft);
+      border-radius: 100px; padding: 7px 16px;
+      font-size: 12px; font-weight: 600; color: var(--navy);
+      text-align: center; margin: 14px auto 0; max-width: calc(100% - 32px);
     }
-    .logo-strip img { height: 56px; object-fit: contain; }
 
     /* ── JOIN ── */
     #s-join .inner {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 18px; max-width: 440px; margin: 0 auto; width: 100%;
+      gap: 14px; max-width: 420px; margin: 0 auto; width: 100%;
     }
-    .join-title { font-size: 32px; font-weight: 900; text-align: center; line-height: 1.2; }
-    .join-title span { color: var(--ph); }
-    .join-sub { color: var(--muted); text-align: center; font-size: 15px; }
+    .join-card {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 24px; box-shadow: var(--shadow-md);
+    }
+    .join-title { font-size: 26px; font-weight: 800; text-align: center; line-height: 1.25; color: var(--navy); letter-spacing: -.5px; }
+    .join-sub { color: var(--muted); text-align: center; font-size: 14px; font-weight: 500; margin-top: 6px; margin-bottom: 22px; line-height: 1.5; }
 
-    input.name-field {
+    .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    input.field {
       width: 100%; background: var(--surface);
-      border: 2px solid rgba(255,255,255,.1); border-radius: 12px;
-      padding: 15px 18px; font-size: 18px; font-family: inherit;
-      color: var(--text); outline: none; transition: border-color .2s;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px 16px; font-size: 16px; font-family: inherit; font-weight: 500;
+      color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
+      margin-bottom: 14px;
     }
-    input.name-field:focus { border-color: var(--primary); }
-    input.name-field::placeholder { color: var(--muted); }
+    input.field:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(23,56,113,.1); }
+    input.field::placeholder { color: #9aa4b5; font-weight: 400; }
+    .field-hint { font-size: 11px; color: var(--muted); font-weight: 500; margin: -10px 0 14px; }
 
     .err-box {
-      width: 100%; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3);
-      color: #fca5a5; padding: 11px 16px; border-radius: 10px;
-      font-size: 14px; text-align: center; display: none;
+      width: 100%; background: #fdf1f0; border: 1px solid #f0c9c4;
+      color: var(--red-dark); padding: 11px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; text-align: center; display: none; margin-bottom: 14px;
     }
     .err-box.show { display: block; }
 
     .btn-join {
-      width: 100%; background: var(--primary); color: #fff;
-      border: none; border-radius: 12px; padding: 16px;
-      font-size: 17px; font-weight: 700; font-family: inherit;
-      cursor: pointer; transition: all .18s;
+      width: 100%; background: var(--navy); color: #fff;
+      border: none; border-radius: 8px; padding: 15px;
+      font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: background .15s;
     }
-    .btn-join:hover { background: var(--ph); transform: translateY(-1px); }
-    .btn-join:active { transform: scale(.97); }
+    .btn-join:hover { background: var(--navy-dark); }
+    .btn-join:active { background: var(--navy-dark); }
 
     /* ── WAITING ── */
     #s-waiting .inner {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 14px; text-align: center;
+      gap: 14px; text-align: center; max-width: 420px; margin: 0 auto; width: 100%;
     }
-    .wait-icon  { font-size: 60px; animation: bob 2.2s ease-in-out infinite; }
-    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-    .wait-title { font-size: 24px; font-weight: 800; }
-    .name-pill  { background: var(--surface); border-radius: 100px; padding: 8px 22px; font-size: 15px; font-weight: 600; color: var(--ph); }
-    .wait-sub   { color: var(--muted); font-size: 14px; }
-    .dots       { display: flex; gap: 8px; justify-content: center; }
-    .dot { width: 9px; height: 9px; background: var(--primary); border-radius: 50%; animation: dp 1.4s infinite; }
+    .wait-check {
+      width: 54px; height: 54px; border-radius: 50%; background: #f1f9f5;
+      border: 1px solid #bfe0cd; display: flex; align-items: center; justify-content: center;
+      color: var(--green); margin-bottom: 2px;
+    }
+    .wait-title { font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -.4px; }
+    .name-pill { background: var(--navy-soft); border: 1px solid #c3d6f2; border-radius: 100px; padding: 8px 20px; font-size: 14px; font-weight: 700; color: var(--navy); }
+    .email-line { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .wait-sub { color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.6; }
+    .dots { display: flex; gap: 7px; justify-content: center; }
+    .dot { width: 8px; height: 8px; background: var(--navy-mid); border-radius: 50%; animation: dp 1.4s infinite; }
     .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
     @keyframes dp { 0%,80%,100%{opacity:.25;transform:scale(.75)} 40%{opacity:1;transform:scale(1.1)} }
 
     /* ── RECONNECT BANNER ── */
     .reconnect-banner {
       position: fixed; top: 0; left: 0; right: 0; z-index: 150;
-      background: #92400e; color: #fef3c7;
-      padding: 10px 16px; font-size: 14px; font-weight: 600;
+      background: var(--yellow); color: var(--navy-dark);
+      padding: 10px 16px; font-size: 13px; font-weight: 600;
       display: none; align-items: center; justify-content: center; gap: 10px;
     }
     .reconnect-banner.show { display: flex; }
     .reconnect-spinner {
-      width: 16px; height: 16px; border: 2px solid rgba(254,243,199,.3);
-      border-top-color: #fef3c7; border-radius: 50%;
+      width: 15px; height: 15px; border: 2px solid rgba(15,38,80,.25);
+      border-top-color: var(--navy-dark); border-radius: 50%;
       animation: spin .7s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -108,167 +146,322 @@
     /* ── COUNTDOWN OVERLAY ── */
     .cd-overlay {
       position: fixed; inset: 0; z-index: 100;
-      background: rgba(7,9,26,.93);
+      background: rgba(248,249,252,.97);
       display: none; flex-direction: column;
-      align-items: center; justify-content: center; gap: 14px;
+      align-items: center; justify-content: center; gap: 12px;
     }
     .cd-overlay.show { display: flex; }
     .cd-num {
-      font-size: 150px; font-weight: 900; line-height: 1;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      animation: cdpop .45s ease;
+      font-size: 130px; font-weight: 800; line-height: 1; color: var(--navy);
+      letter-spacing: -4px; animation: cdpop .4s ease;
     }
-    @keyframes cdpop { from{transform:scale(1.6);opacity:0} to{transform:scale(1);opacity:1} }
-    .cd-label { font-size: 16px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    @keyframes cdpop { from{transform:scale(1.5);opacity:0} to{transform:scale(1);opacity:1} }
+    .cd-label { font-size: 13px; color: var(--muted); letter-spacing: 2.4px; text-transform: uppercase; font-weight: 700; }
 
-    /* ── QUESTION ── */
-    #s-question { padding: 16px; justify-content: space-between; }
-
-    .q-topbar {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+    /* ── QUESTION ──
+       Fixed three-zone layout that always fits the visible viewport:
+       header / question (scrolls internally if huge) / answer zone pinned
+       above the safe area. No page scroll, no layout jump on reveal. */
+    #s-question {
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      gap: 10px; overflow: hidden;
+      width: 100%; max-width: 680px; align-self: center;
     }
-    .q-badge { background: var(--surface); padding: 6px 13px; border-radius: 100px; font-size: 12px; font-weight: 700; color: var(--muted); }
-    .t-num   { font-size: 36px; font-weight: 900; transition: color .3s; }
-    .t-num.warn   { color: var(--gold); }
+
+    .q-topbar { display: flex; align-items: center; gap: 10px; }
+    .q-badge {
+      background: var(--surface); border: 1px solid var(--border-soft);
+      padding: 5px 11px; border-radius: 100px;
+      font-size: 12px; font-weight: 700; color: var(--navy); flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .q-topic {
+      flex: 1; min-width: 0; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .t-num {
+      font-size: 26px; font-weight: 800; color: var(--navy);
+      transition: color .3s; flex-shrink: 0; min-width: 40px; text-align: right;
+      font-variant-numeric: tabular-nums; letter-spacing: -1px;
+    }
+    .t-num.warn   { color: var(--yellow-dark); }
     .t-num.danger { color: var(--red); }
 
-    .prog-track { width: 100%; height: 5px; background: var(--s2); border-radius: 100px; overflow: hidden; margin-bottom: 0; }
+    .prog-track { width: 100%; height: 5px; background: var(--border-soft); border-radius: 100px; overflow: hidden; margin-top: 8px; }
     .prog-bar   { height: 100%; border-radius: 100px; background: var(--primary); transition: width .3s linear, background .3s; }
 
-    /* Question centered in middle area */
-    .q-center {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 16px 0;
-    }
+    /* Question zone: centers short questions, scrolls internally for long ones */
+    .q-center { flex: 1; min-height: 0; display: flex; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .q-box {
+      margin: auto; width: 100%;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 24px 20px;
-      font-size: 20px; font-weight: 700; line-height: 1.5;
-      text-align: center; width: 100%;
+      border-radius: var(--r); padding: 20px 18px;
+      font-size: clamp(17px, 4.6vw, 21px); font-weight: 600; line-height: 1.45;
+      text-align: center; color: var(--text); box-shadow: var(--shadow-sm);
+      overflow-wrap: break-word; word-break: break-word;
     }
+    .q-box.q-mid  { font-size: clamp(15px, 4.1vw, 19px); }
+    .q-box.q-long { font-size: clamp(14px, 3.7vw, 16px); line-height: 1.55; }
 
-    /* Options compact at bottom */
-    .ans-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    /* Answer zone: space is reserved from the start so the reveal never
+       shifts the layout or pushes buttons off-screen */
+    .ans-area { position: relative; flex-shrink: 0; }
+    .ans-hint {
+      position: absolute; inset: 0; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      background: var(--surface); border: 1px dashed var(--border); border-radius: var(--r);
+      color: var(--muted); font-size: 13px; font-weight: 600; text-align: center; padding: 12px;
+      transition: opacity .3s ease;
     }
+    .ans-area.revealed .ans-hint { opacity: 0; pointer-events: none; }
+
+    .ans-grid {
+      display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr;
+      gap: 10px; width: 100%; min-height: min(34dvh, 300px);
+    }
+    /* Long option text reads better stacked full-width */
+    .ans-grid.stack { grid-template-columns: 1fr; min-height: min(38dvh, 330px); }
+
     .ans-btn {
       display: flex; align-items: center; gap: 10px;
-      padding: 13px 14px; border-radius: 11px;
-      color: var(--text); background: var(--s2);
-      border: 1px solid var(--border); cursor: pointer; font-family: inherit;
-      font-size: 14px; font-weight: 700; line-height: 1.3; text-align: left;
-      transition: transform .12s, border-color .15s, background .15s; min-height: 56px;
+      padding: 12px 14px; border-radius: 10px; width: 100%; min-width: 0; min-height: 56px;
+      color: #fff; border: none; cursor: pointer; font-family: inherit;
+      font-size: clamp(14px, 3.8vw, 16px); font-weight: 600; line-height: 1.35; text-align: left;
+      transition: transform .1s, filter .12s; touch-action: manipulation;
+      opacity: 0; pointer-events: none;
     }
-    .ans-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(37,99,235,.12); }
-    .ans-btn:active:not(:disabled) { transform: scale(.97); }
-    .ans-btn:disabled { opacity: .5; cursor: not-allowed; }
-    .ans-btn.selected { border-color: var(--primary); background: rgba(37,99,235,.2); opacity: 1; }
+    .ans-btn span { min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+    .ans-btn.a { background: var(--navy); }
+    .ans-btn.b { background: var(--navy-mid); }
+    .ans-btn.c { background: var(--yellow); color: var(--navy-dark); }
+    .ans-btn.d { background: var(--green); }
+    .ans-btn:active:not(:disabled) { transform: scale(.98); filter: brightness(.94); }
+    .ans-btn:disabled { cursor: not-allowed; }
+    /* Must outrank .ans-grid.revealed .ans-btn's opacity below */
+    .ans-grid.revealed .ans-btn:disabled { opacity: .4; }
+    .ans-grid.revealed .ans-btn.selected { box-shadow: 0 0 0 3px var(--navy-dark); opacity: 1; }
     .ans-btn .btn-lbl {
-      width: 28px; height: 28px; background: rgba(255,255,255,.1);
+      width: 28px; height: 28px; background: rgba(255,255,255,.22);
       border-radius: 6px; display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 900; flex-shrink: 0; color: var(--muted);
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
     }
+    .ans-btn.c .btn-lbl { background: rgba(15,38,80,.14); }
 
-    /* Options hidden initially — collapse height so question stays centered */
-    .ans-grid {
-      opacity: 0; max-height: 0; overflow: hidden; pointer-events: none;
-      transition: opacity .5s ease, max-height .5s ease;
+    /* Staggered entrance: from-only keyframe so the press transform still
+       works normally once the entrance animation finishes */
+    .ans-grid.revealed .ans-btn {
+      opacity: 1; pointer-events: auto;
+      animation: btnIn .35s cubic-bezier(.22,1.1,.36,1) backwards;
     }
-    .ans-grid.revealed { opacity: 1; max-height: 500px; pointer-events: auto; }
+    .ans-grid.revealed .ans-btn:nth-child(2) { animation-delay: .06s; }
+    .ans-grid.revealed .ans-btn:nth-child(3) { animation-delay: .12s; }
+    .ans-grid.revealed .ans-btn:nth-child(4) { animation-delay: .18s; }
+    @keyframes btnIn { from { opacity: 0; transform: translateY(12px); } }
 
-    /* Desktop: group question + options together in center instead of pinning options to bottom */
     @media (min-width: 640px) {
-      #s-question { justify-content: flex-start; }
-      .q-center   { flex: 0 0 auto; margin-top: auto; padding-bottom: 20px; }
-      .ans-grid   { margin-bottom: auto; }
+      #s-question { padding-top: 20px; gap: 14px; }
+      .q-badge { font-size: 13px; padding: 6px 13px; }
+      .q-topic { font-size: 13px; }
+      .q-box { padding: 28px 26px; }
+      .ans-grid { min-height: 230px; gap: 12px; }
+      .ans-grid.stack { min-height: 270px; }
+      .ans-btn { min-height: 64px; }
     }
 
     /* ── ANSWERED ── */
     #s-answered .inner {
       flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 12px; text-align: center;
+      align-items: center; justify-content: center; gap: 14px; text-align: center;
     }
-    .ans-icon  { font-size: 72px; }
-    .ans-title { font-size: 20px; font-weight: 800; }
-    .ans-sub   { color: var(--muted); font-size: 14px; }
+    .ans-title { font-size: 20px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; }
+    .ans-recap {
+      width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 18px 20px; text-align: left; box-shadow: var(--shadow-sm);
+    }
+    .ans-recap .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.1px; font-weight: 800; margin-bottom: 5px; }
+    .ans-recap .q-echo { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 14px; line-height: 1.5; }
+    .ans-recap .my-answer-pill {
+      display: flex; align-items: center; gap: 8px; border-radius: 8px;
+      padding: 11px 14px; color: #fff; font-weight: 700; font-size: 14px;
+    }
+    .ans-sub { color: var(--muted); font-size: 13px; font-weight: 500; }
 
     /* ── RESULTS ── */
     #s-results .inner {
       flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 16px; text-align: center;
+      align-items: center; justify-content: center; gap: 14px; text-align: center;
     }
-    .res-icon  { font-size: 76px; }
-    .res-title { font-size: 28px; font-weight: 900; }
-    .pts-earned { font-size: 22px; font-weight: 800; color: var(--gold); }
+    .res-icon {
+      width: 66px; height: 66px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; border: 1px solid transparent;
+    }
+    .res-icon.ok   { background: #f1f9f5; border-color: #bfe0cd; color: var(--green); }
+    .res-icon.no   { background: #fdf1f0; border-color: #f0c9c4; color: var(--red); }
+    .res-icon.late { background: var(--tint); border-color: var(--border); color: var(--muted); }
+    .res-title { font-size: 24px; font-weight: 800; color: var(--navy); letter-spacing: -.5px; }
+    .pts-earned { font-size: 19px; font-weight: 800; color: var(--green-dark); font-variant-numeric: tabular-nums; }
     .res-box {
       width: 100%; max-width: 380px;
-      background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25);
-      border-radius: var(--r); padding: 14px 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 15px 20px; box-shadow: var(--shadow-sm);
     }
-    .res-box .lbl { font-size: 11px; color: #4ade80; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-    .res-box .ans { font-size: 16px; font-weight: 700; color: #86efac; }
+    .res-box .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.1px; margin-bottom: 5px; font-weight: 800; }
+    .res-box .ans { font-size: 15px; font-weight: 600; color: var(--navy); line-height: 1.45; }
 
     /* ── LEADERBOARD ── */
-    .lb-title { text-align: center; font-size: 24px; font-weight: 900; margin-bottom: 18px; }
+    .lb-title { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 4px; color: var(--navy); letter-spacing: -.4px; }
+    .lb-progress { text-align: center; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 16px; }
     .lb-list  { display: flex; flex-direction: column; gap: 8px; }
     .lb-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; background: var(--surface); border-radius: 10px;
-      border: 1px solid var(--border);
+      padding: 11px 14px; background: var(--surface); border-radius: 8px;
+      border: 1px solid var(--border-soft); animation: slideIn .3s ease both; box-shadow: var(--shadow-sm);
     }
-    .lb-row.me { border-color: var(--primary); background: rgba(37,99,235,.1); }
-    .lb-rank { width: 28px; text-align: center; font-size: 16px; font-weight: 900; color: var(--muted); }
-    .lb-rank.r1{color:#fbbf24} .lb-rank.r2{color:#94a3b8} .lb-rank.r3{color:#c2773a}
-    .lb-name  { flex: 1; font-size: 14px; font-weight: 600; }
-    .lb-score { font-size: 15px; font-weight: 800; color: var(--ph); }
+    @keyframes slideIn { from{transform:translateX(-12px);opacity:0} to{transform:translateX(0);opacity:1} }
+    .lb-row.me { border-color: var(--navy); background: var(--navy-soft); }
+    .lb-rank { width: 26px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .lb-avatar {
+      width: 30px; height: 30px; border-radius: 50%; color: #fff; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+    }
+    .lb-rank.r1{color:var(--yellow-dark)} .lb-rank.r2{color:#7b8794} .lb-rank.r3{color:#a06a3c}
+    .lb-name  { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
+    .lb-score { font-size: 15px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
 
-    /* ── F1 PODIUM (player game over) ── */
+    /* ── FINAL STANDINGS (participant) ── */
     .go-inner {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 14px; width: 100%; max-width: 440px; margin: 0 auto;
     }
-    .go-emoji { font-size: 54px; }
-    .go-title { font-size: 28px; font-weight: 900; text-align: center; }
-    .my-result {
-      width: 100%; background: var(--surface); border-radius: var(--r);
-      padding: 16px 24px; text-align: center;
-    }
-    .my-result .rank-num  { font-size: 48px; font-weight: 900; color: var(--gold); }
-    .my-result .rank-lbl  { font-size: 12px; color: var(--muted); }
-    .my-result .my-score  { font-size: 20px; font-weight: 700; color: var(--ph); margin-top: 6px; }
+    .go-eyebrow { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+    .go-title { font-size: 26px; font-weight: 800; text-align: center; color: var(--navy); line-height: 1.2; letter-spacing: -.6px; }
 
-    .podium-wrap {
-      display: flex; align-items: flex-end; justify-content: center;
-      gap: 4px; width: 100%;
+    /* Personal result card: subtle sunburst for the top three */
+    .my-result {
+      position: relative; overflow: hidden; width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px 22px; text-align: center; box-shadow: var(--shadow-md);
     }
-    .podium-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-    .podium-name { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 3px; word-break: break-word; padding: 0 2px; }
-    .podium-pts  { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .my-result.rank-1 { border-color: var(--yellow);  background: linear-gradient(165deg,#fffbe8,#fff); }
+    .my-result.rank-2 { border-color: #b7c1cd;        background: linear-gradient(165deg,#f2f5f9,#fff); }
+    .my-result.rank-3 { border-color: #9fc2ea;        background: linear-gradient(165deg,#eff5fd,#fff); }
+    .mr-rays {
+      position: absolute; left: 50%; top: 50%; width: 900px; height: 900px;
+      background: repeating-conic-gradient(rgba(255,220,87,.16) 0deg 14deg, transparent 14deg 28deg);
+      opacity: 0; transition: opacity .5s ease; pointer-events: none;
+      animation: raysSpin 20s linear infinite;
+    }
+    .my-result.top3 .mr-rays { opacity: 1; }
+    @keyframes raysSpin {
+      from { transform: translate(-50%,-50%) rotate(0deg); }
+      to   { transform: translate(-50%,-50%) rotate(360deg); }
+    }
+    .mr-rank {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      min-width: 52px; height: 52px; padding: 0 14px; border-radius: 26px;
+      background: var(--navy); color: #fff; font-size: 24px; font-weight: 800; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .my-result.rank-1 .mr-rank { background: linear-gradient(160deg,#ffe07a,var(--yellow-dark)); color: var(--navy-dark); }
+    .my-result.rank-2 .mr-rank { background: linear-gradient(160deg,#c8d1dc,#8b97a6); }
+    .my-result.rank-3 .mr-rank { background: linear-gradient(160deg,#3b86d6,var(--navy)); }
+    .mr-rank.pop { animation: rankPop .5s cubic-bezier(.22,1.5,.36,1); }
+    @keyframes rankPop { from { transform: scale(0); } to { transform: scale(1); } }
+    .mr-headline { position: relative; font-size: 19px; font-weight: 800; color: var(--navy); line-height: 1.3; margin-top: 10px; letter-spacing: -.3px; }
+    .mr-score { position: relative; font-size: 22px; font-weight: 800; color: var(--green-dark); margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+    .podium-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; }
+    .podium-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+    .podium-crown { height: 26px; opacity: 0; transition: opacity .4s ease .25s; margin-bottom: -2px; }
+    .podium-crown span { display: inline-block; font-size: 22px; }
+    .podium-col.revealed .podium-crown { opacity: 1; }
+    .podium-avatar {
+      width: 42px; height: 42px; border-radius: 50%; margin-bottom: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 800; color: #fff;
+      border: 2px solid #fff; box-shadow: var(--shadow-md);
+      transform: scale(0); transition: transform .45s cubic-bezier(.22,1.5,.36,1) .12s;
+    }
+    .p1 .podium-avatar { width: 50px; height: 50px; font-size: 20px; background: linear-gradient(160deg,#ffe07a,var(--yellow-dark)); color: var(--navy-dark); }
+    .p2 .podium-avatar { background: linear-gradient(160deg,#c8d1dc,#8b97a6); }
+    .p3 .podium-avatar { background: linear-gradient(160deg,#3b86d6,var(--navy)); }
+    .podium-col.revealed .podium-avatar { transform: scale(1); }
+    .podium-name {
+      font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 2px; word-break: break-word; padding: 0 2px; color: var(--text);
+      opacity: 0; transition: opacity .3s ease;
+    }
+    .podium-pts { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600; opacity: 0; transition: opacity .3s ease; font-variant-numeric: tabular-nums; }
     .podium-block {
+      position: relative; overflow: hidden;
       width: 100%; border-radius: 8px 8px 0 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 3px;
+      gap: 2px; transform: scaleY(0); transform-origin: bottom;
+      transition: transform .5s cubic-bezier(.22,1.3,.4,1);
     }
-    .podium-medal { font-size: 22px; }
-    .podium-rank  { font-size: 16px; font-weight: 900; color: rgba(0,0,0,.5); }
-    .p1 .podium-block { height: 90px;  background: linear-gradient(180deg,#fbbf24,#d97706); }
-    .p2 .podium-block { height: 70px;  background: linear-gradient(180deg,#94a3b8,#64748b); }
-    .p3 .podium-block { height: 58px;  background: linear-gradient(180deg,#cd7c3a,#92400e); }
+    .podium-block::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 7px; background: rgba(255,255,255,.28); }
+    .podium-rank { font-size: 22px; font-weight: 800; color: rgba(255,255,255,.95); line-height: 1; }
+    .p1 .podium-block { height: 92px; background: linear-gradient(180deg,#ffe07a,var(--yellow-dark)); }
+    .p1 .podium-rank { color: var(--navy-dark); }
+    .p2 .podium-block { height: 70px; background: linear-gradient(180deg,#c8d1dc,#8b97a6); }
+    .p3 .podium-block { height: 58px; background: linear-gradient(180deg,#3b86d6,var(--navy)); }
+    .podium-col.revealed .podium-block { transform: scaleY(1); }
+    .podium-col.revealed .podium-name,
+    .podium-col.revealed .podium-pts { opacity: 1; }
+
+    /* Confetti + firework celebration layer, in brand colours */
+    #confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
+    .confetti-piece {
+      position: absolute; top: -12px; width: 7px; height: 12px; border-radius: 2px;
+      animation-name: confettiFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(90vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0; }
+    }
+    .firework-spark {
+      position: absolute; width: 5px; height: 5px; border-radius: 50%;
+      animation: sparkOut .8s ease-out forwards;
+    }
+
+    /* Sound toggle, top-right and out of the way of everything else */
+    .btn-sound {
+      position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 10px; z-index: 120;
+      display: inline-flex; align-items: center; gap: 5px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--navy);
+      font-family: inherit; font-weight: 600; font-size: 11px; padding: 5px 9px;
+      border-radius: 100px; cursor: pointer; box-shadow: var(--shadow-sm);
+    }
+    .btn-sound.off { color: var(--muted); }
+    .btn-sound svg { flex-shrink: 0; }
+    @keyframes sparkOut {
+      0%   { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; }
+    }
   </style>
 </head>
 <body>
 
+<div id="confetti-layer"></div>
+
+<button id="btn-sound" class="btn-sound" onclick="toggleSound()" aria-label="Turn sound on or off"></button>
+
 <!-- RECONNECT BANNER -->
 <div class="reconnect-banner" id="reconnect-banner">
   <div class="reconnect-spinner"></div>
-  <span>Connection lost — reconnecting…</span>
+  <span>Reconnecting&hellip;</span>
 </div>
 
 <!-- COUNTDOWN OVERLAY -->
 <div class="cd-overlay" id="cd-overlay">
   <div class="cd-num" id="cd-num">3</div>
-  <div class="cd-label">Get Ready!</div>
+  <div class="cd-label">Starting</div>
 </div>
+
+<!-- Persistent subject/topic bar -->
+<div class="quiz-pill" id="quiz-pill"><span id="quiz-pill-text">&middot;</span></div>
 
 <!-- JOIN -->
 <div id="s-join" class="screen active">
@@ -276,11 +469,22 @@
     <img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'">
   </div>
   <div class="inner">
-    <h1 class="join-title">Join the <span>Quiz</span></h1>
-    <p class="join-sub">Enter your name to participate in the live session</p>
-    <input class="name-field" id="name-in" type="text" placeholder="Your name" maxlength="20" autocomplete="off" autocorrect="off">
-    <div class="err-box" id="err"></div>
-    <button class="btn-join" onclick="joinGame()">Join Quiz →</button>
+    <div class="join-card">
+      <h1 class="join-title">Join the quiz</h1>
+      <p class="join-sub">Enter your name and work email to take part</p>
+
+      <label class="field-label" for="name-in">Your name</label>
+      <input class="field" id="name-in" type="text" placeholder="e.g. Ishan Shah" maxlength="30" autocomplete="name" autocorrect="off">
+
+      <label class="field-label" for="email-in">Your email</label>
+      <input class="field" id="email-in" type="email" placeholder="name@quantinsti.com" maxlength="120"
+             autocomplete="email" autocapitalize="none" autocorrect="off" inputmode="email">
+      <div class="field-hint">Used to record your score, so you can rejoin on any device if you drop off.</div>
+
+      <div class="err-box" id="err"></div>
+      <button class="btn-join" onclick="joinGame()">Join Quiz</button>
+    </div>
+    <div id="version-tag" style="font-size:11px;font-weight:500;color:var(--muted);opacity:.7;"></div>
   </div>
 </div>
 
@@ -290,10 +494,13 @@
     <img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'">
   </div>
   <div class="inner">
-    <div class="wait-icon">🚀</div>
-    <div class="wait-title">You're in!</div>
-    <div class="name-pill" id="name-pill">—</div>
-    <p class="wait-sub">Waiting for other players to join…<br>The host will start the quiz once everyone is in.</p>
+    <div class="wait-check">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="wait-title">You're in</div>
+    <div class="name-pill" id="name-pill">&middot;</div>
+    <div class="email-line" id="email-line"></div>
+    <p class="wait-sub">Hold on while everyone else joins.<br>The host will start the quiz shortly.</p>
     <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   </div>
 </div>
@@ -303,20 +510,27 @@
   <div>
     <div class="q-topbar">
       <div class="q-badge">Q <span id="p-qn">1</span>/<span id="p-qt">10</span></div>
+      <div class="q-topic" id="q-topic"></div>
       <div class="t-num" id="p-t">20</div>
     </div>
     <div class="prog-track"><div class="prog-bar" id="p-bar"></div></div>
   </div>
 
   <div class="q-center">
-    <div class="q-box" id="p-q">—</div>
+    <div class="q-box" id="p-q">&middot;</div>
   </div>
 
-  <div class="ans-grid" id="ans-grid">
-    <button class="ans-btn a" onclick="answer(0)"><div class="btn-lbl">A</div><span id="p-o0">—</span></button>
-    <button class="ans-btn b" onclick="answer(1)"><div class="btn-lbl">B</div><span id="p-o1">—</span></button>
-    <button class="ans-btn c" onclick="answer(2)"><div class="btn-lbl">C</div><span id="p-o2">—</span></button>
-    <button class="ans-btn d" onclick="answer(3)"><div class="btn-lbl">D</div><span id="p-o3">—</span></button>
+  <div class="ans-area" id="ans-area">
+    <div class="ans-grid" id="ans-grid">
+      <button class="ans-btn a" onclick="answer(0)"><div class="btn-lbl">A</div><span id="p-o0">&middot;</span></button>
+      <button class="ans-btn b" onclick="answer(1)"><div class="btn-lbl">B</div><span id="p-o1">&middot;</span></button>
+      <button class="ans-btn c" onclick="answer(2)"><div class="btn-lbl">C</div><span id="p-o2">&middot;</span></button>
+      <button class="ans-btn d" onclick="answer(3)"><div class="btn-lbl">D</div><span id="p-o3">&middot;</span></button>
+    </div>
+    <div class="ans-hint" id="ans-hint">
+      <span>Read the question first&hellip;</span>
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
   </div>
 </div>
 
@@ -324,9 +538,14 @@
 <div id="s-answered" class="screen">
   <div class="logo-strip"><img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'"></div>
   <div class="inner">
-    <div class="ans-icon" id="ans-icon">⏳</div>
-    <div class="ans-title" id="ans-title">Answer submitted!</div>
-    <div class="ans-sub">Waiting for other players…</div>
+    <div class="ans-title" id="ans-title">Answer locked in</div>
+    <div class="ans-recap">
+      <div class="lbl">The question</div>
+      <div class="q-echo" id="ans-q-echo">&middot;</div>
+      <div class="lbl">Your answer</div>
+      <div class="my-answer-pill" id="ans-my-answer"><span id="ans-my-answer-lbl"></span><span id="ans-my-answer-text"></span></div>
+    </div>
+    <div class="ans-sub">Waiting for everyone else to answer</div>
   </div>
 </div>
 
@@ -334,12 +553,12 @@
 <div id="s-results" class="screen">
   <div class="logo-strip"><img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'"></div>
   <div class="inner">
-    <div class="res-icon" id="res-icon">✅</div>
-    <div class="res-title" id="res-title">Correct!</div>
+    <div class="res-icon ok" id="res-icon"></div>
+    <div class="res-title" id="res-title">Correct</div>
     <div class="pts-earned" id="pts-earned"></div>
     <div class="res-box">
       <div class="lbl">Correct Answer</div>
-      <div class="ans" id="res-ans">—</div>
+      <div class="ans" id="res-ans">&middot;</div>
     </div>
   </div>
 </div>
@@ -347,96 +566,260 @@
 <!-- LEADERBOARD -->
 <div id="s-leaderboard" class="screen">
   <div class="logo-strip"><img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'"></div>
-  <div class="lb-title">🏆 Leaderboard</div>
+  <div class="lb-title">Leaderboard</div>
+  <div class="lb-progress" id="p-lb-progress"></div>
   <div class="lb-list" id="p-lb"></div>
 </div>
 
-<!-- GAME OVER — F1 PODIUM -->
+<!-- FINAL STANDINGS -->
 <div id="s-gameover" class="screen">
   <div class="logo-strip"><img src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'"></div>
   <div class="go-inner">
-    <div class="go-emoji">🏁</div>
+    <div class="go-eyebrow">Session complete</div>
     <div class="go-title">Final Standings</div>
-    <div class="my-result">
-      <div class="rank-num" id="my-rank">—</div>
-      <div class="rank-lbl">Your Final Rank</div>
-      <div class="my-score" id="my-score">0 pts</div>
+    <div class="my-result" id="my-result">
+      <div class="mr-rays"></div>
+      <div class="mr-rank" id="my-rank">&middot;</div>
+      <div class="mr-headline" id="my-headline">Counting up your points&hellip;</div>
+      <div class="mr-score" id="my-score">0 pts</div>
     </div>
-    <div class="podium-wrap" id="p-podium"></div>
+    <div class="podium-wrap" id="p-podium">
+      <div class="podium-col p2" id="p-podium-slot-p2">
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">2</div></div>
+      </div>
+      <div class="podium-col p1" id="p-podium-slot-p1">
+        <div class="podium-crown"><span>&#127942;</span></div>
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">1</div></div>
+      </div>
+      <div class="podium-col p3" id="p-podium-slot-p3">
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">3</div></div>
+      </div>
+    </div>
     <div class="lb-list" id="p-final" style="width:100%"></div>
   </div>
 </div>
 
+<script src="/audio.js"></script>
 <script>
   let ws;
   let myName       = '';
+  let myEmail      = '';
   let myAns        = -1;
-  let myPtsLastQ   = 0;
   let timerIv      = null;
   let qStart       = 0;
   let revealTimeout  = null;
   let reconnectTimer = null;
+  let lastQuestionText = '';
+  let lastOptions      = ['', '', '', ''];
+
+  const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/;
+
+  // ── Sound ──────────────────────────────────────────────────────────────────
+  // Phones get short cues only, never a music bed: the host screen carries the
+  // music, and twenty phones playing a loop in one room is just noise. Quiet by
+  // design, and the choice is remembered per device.
+  QuizAudio.setup('player');
+
+  const ICON_SOUND_ON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>';
+  const ICON_SOUND_OFF = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>';
+
+  function renderSoundBtn() {
+    const btn = document.getElementById('btn-sound');
+    const on = QuizAudio.isEnabled();
+    btn.classList.toggle('off', !on);
+    btn.innerHTML = (on ? ICON_SOUND_ON : ICON_SOUND_OFF) + '<span>' + (on ? 'Sound' : 'Muted') + '</span>';
+  }
+  function toggleSound() { QuizAudio.toggle(); renderSoundBtn(); }
+  renderSoundBtn();
+
+  // ── Device identity & session persistence ─────────────────────────────────
+  // A stable per-device id lets the server recognise this participant across page
+  // refreshes and network drops, even while their old socket still looks
+  // connected on the server. localStorage can throw in private browsing, so
+  // every access is wrapped.
+  function storageGet(k)    { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function storageDel(k)    { try { localStorage.removeItem(k); } catch (e) {} }
+
+  const DEVICE_ID = (() => {
+    let id = storageGet('qi_device_id');
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'd-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      storageSet('qi_device_id', id);
+    }
+    return id;
+  })();
+
+  const SESSION_KEY = 'qi_player_session';
+  const SESSION_MAX_AGE_MS = 6 * 60 * 60 * 1000; // matches the server's resume window
+
+  function loadSession() {
+    try {
+      const s = JSON.parse(storageGet(SESSION_KEY));
+      if (s && s.name && (Date.now() - (s.ts || 0)) < SESSION_MAX_AGE_MS) return s;
+    } catch (e) {}
+    return null;
+  }
+  function saveSession()  {
+    savedSession = { name: myName, email: myEmail, ts: Date.now() };
+    storageSet(SESSION_KEY, JSON.stringify(savedSession));
+  }
+  function clearSession() { savedSession = null; storageDel(SESSION_KEY); }
+
+  let savedSession = loadSession();
 
   function initWS() {
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${proto}//${location.host}/ws/player`);
-    ws.onmessage = e => handle(JSON.parse(e.data));
-    ws.onclose   = onWsClose;
-    ws.onerror   = () => {};
+    const sock = new WebSocket(`${proto}//${location.host}/ws/player`);
+    ws = sock;
+    sock.onmessage = e => {
+      if (ws !== sock) return;
+      let msg;
+      try { msg = JSON.parse(e.data); } catch (err) { return; }
+      handle(msg);
+    };
+    sock.onclose   = e => { if (ws === sock) onWsClose(e); };
+    sock.onerror   = () => {};
+    sock.onopen    = () => {
+      if (ws !== sock) { try { sock.close(); } catch (e) {} return; }
+      document.getElementById('reconnect-banner').classList.remove('show');
+      // Re-announce ourselves after a reconnect so the server restores our score/screen.
+      if (myName && myEmail) {
+        send({ action: 'join', name: myName, email: myEmail, device_id: DEVICE_ID });
+      } else if (savedSession && savedSession.email) {
+        // Fresh page load after a refresh or crash: rejoin automatically with
+        // the saved identity so nobody has to re-type anything.
+        send({ action: 'join', name: savedSession.name, email: savedSession.email, device_id: DEVICE_ID });
+      }
+    };
   }
 
-  function onWsClose() {
-    if (!myName) return;  // not joined yet — no need to reconnect
+  function onWsClose(e) {
+    if (e && e.code === 4000) {
+      // The server replaced this connection because the same device joined
+      // again (e.g. a second tab). Don't fight that tab over the session.
+      document.getElementById('reconnect-banner').classList.remove('show');
+      return;
+    }
+    // Always retry, even before the first successful join: the very first
+    // connection attempt can itself drop on flaky wifi, and without this the
+    // join screen would be permanently stuck with no feedback.
     document.getElementById('reconnect-banner').classList.add('show');
     clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(() => {
-      initWS();
-      ws.onopen = () => send({ action: 'join', name: myName });
-    }, 2000);
+    reconnectTimer = setTimeout(initWS, 2000);
   }
 
   initWS();
 
+  // Mobile browsers freeze timers and quietly kill sockets while the tab is in
+  // the background. The moment the participant comes back (tab switch, screen
+  // unlock, network back), verify the connection and rebuild it if needed.
+  function ensureConnected() {
+    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+      clearTimeout(reconnectTimer);
+      initWS();
+    } else if (ws.readyState === WebSocket.OPEN) {
+      // A quiet socket can be silently dead after the phone slept; a ping
+      // either proves it alive or makes onclose fire quickly.
+      send({ action: 'ping' });
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureConnected(); });
+  window.addEventListener('online', ensureConnected);
+  window.addEventListener('pageshow', ensureConnected);
+
+  // Pre-fill the join form from the last session so even a manual join is one tap.
+  if (savedSession) {
+    document.getElementById('name-in').value = savedSession.name || '';
+    document.getElementById('email-in').value = savedSession.email || '';
+  }
+
   function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Keepalive: some hosting proxies silently drop WebSocket connections that go
+  // quiet for too long (no error, no close event, just stop delivering messages).
+  // A small heartbeat keeps real traffic flowing so that never happens.
+  setInterval(() => send({ action: 'ping' }), 20000);
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`s-${id}`).classList.add('active');
+    // The question screen shows subject/topic inside its own topbar instead, so
+    // the bar stays hidden there to give the question every pixel of height.
+    const pill = document.getElementById('quiz-pill');
+    pill.style.display = ['answered', 'results', 'leaderboard', 'gameover'].includes(id) ? 'flex' : 'none';
+  }
+
+  function setQuizPill(subject, topic) {
+    if (subject !== undefined) {
+      const label = (subject || topic) ? `${subject} · ${topic}` : '';
+      document.getElementById('quiz-pill-text').textContent = label || '·';
+      document.getElementById('q-topic').textContent = label;
+    }
   }
 
   function handle(msg) {
+    if (msg.subject !== undefined) setQuizPill(msg.subject, msg.topic);
     switch (msg.type) {
       case 'joined':
         myName = msg.name;
+        if (msg.email) myEmail = msg.email;
+        saveSession();
         document.getElementById('name-pill').textContent = msg.name;
+        document.getElementById('email-line').textContent = myEmail;
         document.getElementById('reconnect-banner').classList.remove('show');
         show('waiting');
         break;
-      case 'error':
+      case 'removed_by_host':
+        myName = '';
+        clearSession();
+        show('join');
+        showErr('You were removed from this quiz. You can join again below.');
+        break;
+      case 'game_reset':
+        clearInterval(timerIv);
+        clearTimeout(revealTimeout);
+        hideCountdown();
+        myName = '';
+        myAns = -1;
+        clearSession();
+        show('join');
+        showErr('The host started a new session. Please join again below.');
+        break;
+      case 'error': {
         const e = document.getElementById('err');
         e.textContent = msg.message; e.classList.add('show');
         break;
+      }
       case 'countdown':
+        QuizAudio.countdown(msg.value);
         showCountdown(msg.value);
         break;
       case 'question_start':
-        myAns = -1; myPtsLastQ = 0;
+        myAns = -1;
         hideCountdown();
         showQuestion(msg);
         break;
       case 'answer_received':
-        myAns = msg.answer;
-        const icons = ['🔴','🔵','🟡','🟢'];
-        const lbls  = ['A','B','C','D'];
-        document.getElementById('ans-icon').textContent  = icons[msg.answer];
-        document.getElementById('ans-title').textContent = `Answer ${lbls[msg.answer]} submitted!`;
-        show('answered');
+        showAnswered(msg.answer);
         break;
       case 'results':
         showResults(msg);
         break;
       case 'leaderboard':
+        QuizAudio.leaderboard();
         renderLB(msg.leaderboard, 'p-lb');
+        document.getElementById('p-lb-progress').textContent =
+          msg.total ? `Question ${msg.current} of ${msg.total} completed` : '';
         show('leaderboard');
         break;
       case 'game_over':
@@ -447,7 +830,6 @@
         clearTimeout(revealTimeout);
         hideCountdown();
         myAns = -1;
-        myPtsLastQ = 0;
         document.querySelectorAll('.ans-btn').forEach(b => {
           b.disabled = false;
           b.classList.remove('selected');
@@ -464,8 +846,15 @@
 
   function joinGame() {
     const n = document.getElementById('name-in').value.trim();
+    const em = document.getElementById('email-in').value.trim();
     if (!n) { showErr('Please enter your name.'); return; }
-    send({ action: 'join', name: n });
+    if (!EMAIL_RE.test(em)) { showErr('Please enter a valid email address.'); return; }
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      showErr('Still connecting. Please wait a moment and tap Join again.');
+      return;
+    }
+    myEmail = em;
+    send({ action: 'join', name: n, email: em, device_id: DEVICE_ID });
   }
 
   function showErr(msg) {
@@ -473,7 +862,12 @@
     el.textContent = msg; el.classList.add('show');
   }
 
-  document.getElementById('name-in').addEventListener('keydown', e => { if (e.key === 'Enter') joinGame(); });
+  document.getElementById('name-in').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('email-in').focus();
+  });
+  document.getElementById('email-in').addEventListener('keydown', e => {
+    if (e.key === 'Enter') joinGame();
+  });
 
   function showCountdown(n) {
     const ov  = document.getElementById('cd-overlay');
@@ -487,11 +881,31 @@
     document.getElementById('cd-overlay').classList.remove('show');
   }
 
+  function revealOptions() {
+    const grid = document.getElementById('ans-grid');
+    // Only chime the first time the options appear for this question, not when
+    // answer() calls this again to short-circuit the reveal timer.
+    const firstTime = !grid.classList.contains('revealed');
+    grid.classList.add('revealed');
+    document.getElementById('ans-area').classList.add('revealed');
+    if (firstTime) QuizAudio.optionsReveal();
+  }
+
   function showQuestion(msg) {
     show('question');
+    setQuizPill(msg.subject, msg.topic);
+    lastQuestionText = msg.question;
+    lastOptions = msg.options;
     document.getElementById('p-qn').textContent = msg.index + 1;
     document.getElementById('p-qt').textContent = msg.total;
-    document.getElementById('p-q').textContent  = msg.question;
+
+    // Scale the question text down as it gets longer so it fits without scrolling
+    const qEl = document.getElementById('p-q');
+    qEl.textContent = msg.question;
+    qEl.classList.remove('q-mid', 'q-long');
+    if (msg.question.length > 140)     qEl.classList.add('q-long');
+    else if (msg.question.length > 70) qEl.classList.add('q-mid');
+
     ['p-o0','p-o1','p-o2','p-o3'].forEach((id, i) => {
       document.getElementById(id).textContent = msg.options[i];
     });
@@ -499,23 +913,27 @@
     // Reset and enable buttons; hide options initially
     const grid = document.getElementById('ans-grid');
     grid.classList.remove('revealed');
+    document.getElementById('ans-area').classList.remove('revealed');
+    // Long option text is easier to read stacked full-width than in a 2x2 grid
+    const longest = Math.max(...msg.options.map(o => (o || '').length));
+    grid.classList.toggle('stack', longest > 26);
     document.querySelectorAll('.ans-btn').forEach(b => {
       b.disabled = false;
       b.classList.remove('selected');
       b.blur();
     });
 
-    // Offset qStart by how much time already elapsed (catches up timer on reconnect)
+    // Offset qStart by how much time already elapsed (catches the timer up on reconnect)
     const elapsed = msg.elapsed || 0;
     qStart = Date.now() - elapsed * 1000;
 
-    // Reveal options after remaining delay (or immediately if already past 5s)
+    // Reveal options after the remaining delay (or immediately if already past 5s)
     clearTimeout(revealTimeout);
     const revealDelay = Math.max(0, 5000 - elapsed * 1000);
     if (revealDelay === 0) {
-      grid.classList.add('revealed');
+      revealOptions();
     } else {
-      revealTimeout = setTimeout(() => grid.classList.add('revealed'), revealDelay);
+      revealTimeout = setTimeout(revealOptions, revealDelay);
     }
 
     startTimer(msg.time_limit);
@@ -532,7 +950,7 @@
       num.textContent = Math.ceil(rem);
       bar.style.width = (rem / s * 100) + '%';
       if (rem <= 5)       { num.className = 't-num danger'; bar.style.background = 'var(--red)'; }
-      else if (rem <= 10) { num.className = 't-num warn';   bar.style.background = 'var(--gold)'; }
+      else if (rem <= 10) { num.className = 't-num warn';   bar.style.background = 'var(--yellow)'; }
       if (rem <= 0) {
         clearInterval(timerIv);
         document.querySelectorAll('.ans-btn').forEach(b => b.disabled = true);
@@ -543,16 +961,34 @@
   function answer(idx) {
     if (myAns !== -1) return;
     clearTimeout(revealTimeout);
-    document.getElementById('ans-grid').classList.add('revealed');
+    revealOptions();
+    QuizAudio.answerTap();
     document.querySelectorAll('.ans-btn').forEach((b, i) => {
       b.disabled = true;
       if (i === idx) b.classList.add('selected');
     });
     clearInterval(timerIv);
-    // Estimate points for display
-    const elapsed = (Date.now() - qStart) / 1000;
     send({ action: 'answer', answer: idx });
   }
+
+  const OPT_COLORS = ['var(--navy)', 'var(--navy-mid)', 'var(--yellow)', 'var(--green)'];
+
+  function showAnswered(ansIdx) {
+    myAns = ansIdx;
+    const lbls = ['A','B','C','D'];
+    document.getElementById('ans-title').textContent = 'Answer locked in';
+    document.getElementById('ans-q-echo').textContent = lastQuestionText;
+    const pill = document.getElementById('ans-my-answer');
+    pill.style.background = OPT_COLORS[ansIdx];
+    pill.style.color = ansIdx === 2 ? 'var(--navy-dark)' : '#fff';
+    document.getElementById('ans-my-answer-lbl').textContent = lbls[ansIdx] + ':';
+    document.getElementById('ans-my-answer-text').textContent = lastOptions[ansIdx];
+    show('answered');
+  }
+
+  const ICON_TICK  = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const ICON_CROSS = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const ICON_CLOCK = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>';
 
   function showResults(msg) {
     clearInterval(timerIv);
@@ -561,67 +997,149 @@
     const did  = myAns !== -1;
     const hit  = myAns === ok;
 
-    document.getElementById('res-icon').textContent  = !did ? '⏰' : hit ? '✅' : '❌';
-    document.getElementById('res-title').textContent = !did ? "Time's Up!" : hit ? 'Correct!' : 'Wrong Answer';
+    const iconEl = document.getElementById('res-icon');
+    iconEl.className = 'res-icon ' + (!did ? 'late' : hit ? 'ok' : 'no');
+    iconEl.innerHTML = !did ? ICON_CLOCK : hit ? ICON_TICK : ICON_CROSS;
+    document.getElementById('res-title').textContent = !did ? "Time's up" : hit ? 'Correct' : 'Not quite';
     document.getElementById('res-ans').textContent   = `${opts[ok]}: ${msg.correct_text}`;
+    if (!did) QuizAudio.timeUp(); else if (hit) QuizAudio.correct(); else QuizAudio.wrong();
 
     const ptsEl = document.getElementById('pts-earned');
     const myPts = hit && msg.points_earned ? msg.points_earned[myName] : undefined;
     if (myPts !== undefined) {
-      ptsEl.textContent = `+${myPts.toLocaleString()} pts`;
+      ptsEl.textContent = `+${myPts.toLocaleString()} points`;
     } else {
-      ptsEl.textContent = hit ? '+ Points earned!' : '';
+      ptsEl.textContent = hit ? 'Points earned' : '';
     }
 
     show('results');
   }
 
-  function showGameOver(lb) {
+  // ── Confetti & fireworks, in QI brand colours ───────────────────────────────
+
+  const BRAND_COLORS = ['#173871', '#2e77c9', '#ffdc57', '#1b7f4d', '#0f2650'];
+
+  function burstConfetti(count) {
+    const layer = document.getElementById('confetti-layer');
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.background = BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
+      p.style.animationDelay = (Math.random() * 0.4) + 's';
+      p.style.animationDuration = (2 + Math.random() * 1.4) + 's';
+      p.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+      p.style.setProperty('--drift', (Math.random() * 140 - 70) + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 4000);
+    }
+  }
+
+  function fireworkBurst(x, y, color) {
+    const layer = document.getElementById('confetti-layer');
+    const n = 16;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement('div');
+      p.className = 'firework-spark';
+      const angle = (Math.PI * 2 * i) / n;
+      const dist = 45 + Math.random() * 35;
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.background = color;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+  }
+
+  // ── Final standings podium (staged reveal) ──────────────────────────────────
+
+  async function showGameOver(lb) {
+    show('gameover');
     const rank = lb.findIndex(p => p.name === myName);
     const me   = lb.find(p => p.name === myName);
-    const medals = ['🥇','🥈','🥉'];
-    document.getElementById('my-rank').textContent  = rank < 3 ? medals[rank] : `#${rank + 1}`;
-    document.getElementById('my-score').textContent = me ? `${me.score.toLocaleString()} pts` : '—';
-    buildPodium(lb, 'p-podium');
-    renderLB(lb.slice(3), 'p-final');
-    show('gameover');
-  }
+    const card   = document.getElementById('my-result');
+    const rankEl = document.getElementById('my-rank');
+    card.className = 'my-result';
+    rankEl.classList.remove('pop');
+    rankEl.textContent = '·';
+    document.getElementById('my-headline').textContent = 'Counting up your points…';
+    document.getElementById('my-score').textContent = me ? `${me.score.toLocaleString()} pts` : '·';
 
-  function buildPodium(lb, elId) {
-    const el = document.getElementById(elId);
-    el.innerHTML = '';
-    const order = [
-      { idx: 1, cls: 'p2', medal: '🥈' },
-      { idx: 0, cls: 'p1', medal: '🏆' },
-      { idx: 2, cls: 'p3', medal: '🥉' },
-    ];
-    order.forEach(({ idx, cls, medal }) => {
-      const p = lb[idx];
-      if (!p) return;
-      const col = document.createElement('div');
-      col.className = `podium-col ${cls}`;
-      col.innerHTML = `
-        <div class="podium-name">${p.name}</div>
-        <div class="podium-pts">${p.score.toLocaleString()}</div>
-        <div class="podium-block">
-          <div class="podium-medal">${medal}</div>
-          <div class="podium-rank">${idx + 1}</div>
-        </div>`;
-      el.appendChild(col);
+    ['p1', 'p2', 'p3'].forEach(cls => {
+      document.getElementById(`p-podium-slot-${cls}`).classList.remove('revealed');
     });
+    renderLB(lb.slice(3), 'p-final', 3);
+
+    await sleep(400);
+    await revealPodiumSpot(lb, 2, 'p3', '#2e77c9');
+    await sleep(700);
+    await revealPodiumSpot(lb, 1, 'p2', '#8b97a6');
+    await sleep(700);
+    await revealPodiumSpot(lb, 0, 'p1', '#ffdc57');
+
+    // Personal result once the podium is fully revealed
+    if (rank >= 0 && rank < 3) {
+      card.classList.add('top3', `rank-${rank + 1}`);
+      rankEl.textContent = ['1st','2nd','3rd'][rank];
+      document.getElementById('my-headline').textContent =
+        ['You finished first', 'You finished second', 'You finished third'][rank];
+    } else if (rank >= 0) {
+      rankEl.textContent = `#${rank + 1}`;
+      document.getElementById('my-headline').textContent = `You finished ${rank + 1} of ${lb.length}`;
+    } else {
+      rankEl.textContent = '–';
+      document.getElementById('my-headline').textContent = 'Thanks for taking part';
+    }
+    rankEl.classList.add('pop');
+    QuizAudio.fanfare();
+    burstConfetti(90);
+    setTimeout(() => burstConfetti(50), 1200);
+    setTimeout(() => burstConfetti(40), 2600);
   }
 
-  function renderLB(lb, containerId) {
-    const medals = ['🥇','🥈','🥉'];
+  async function revealPodiumSpot(lb, idx, cls, sparkColor) {
+    const p = lb[idx];
+    const col = document.getElementById(`p-podium-slot-${cls}`);
+    if (!p) return;
+    col.querySelector('.podium-avatar').textContent = (p.name || '?').trim().charAt(0).toUpperCase();
+    col.querySelector('.podium-name').textContent = p.name;
+    col.querySelector('.podium-pts').textContent = `${p.score.toLocaleString()} pts`;
+    col.classList.add('revealed');
+    const rect = col.getBoundingClientRect();
+    fireworkBurst(rect.left + rect.width / 2, rect.top + 15, sparkColor);
+  }
+
+  // Tiny build stamp on the join screen so it's easy to confirm which version a
+  // participant's phone actually loaded.
+  fetch('/api/version')
+    .then(r => r.json())
+    .then(d => { document.getElementById('version-tag').textContent = (d.instance ? d.instance + ' · ' : '') + 'v' + d.version; })
+    .catch(() => {});
+
+  const AVATAR_COLORS = ['#173871', '#2e77c9', '#1b7f4d', '#0f2650', '#3b86d6', '#146239'];
+  function avatarColor(name) {
+    let h = 0;
+    for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // rankOffset lets the final screen render "4th place onward" with true ranks
+  function renderLB(lb, containerId, rankOffset = 0) {
     const el = document.getElementById(containerId);
     el.innerHTML = '';
     lb.forEach((p, i) => {
+      const rank = i + rankOffset;
       const row = document.createElement('div');
       row.className = 'lb-row' + (p.name === myName ? ' me' : '');
-      const rC = i < 3 ? ` r${i+1}` : '';
+      row.style.animationDelay = (i * .05) + 's';
+      const rC = rank < 3 ? ` r${rank+1}` : '';
       row.innerHTML = `
-        <div class="lb-rank${rC}">${i < 3 ? medals[i] : i+1}</div>
-        <div class="lb-name">${p.name}${p.name === myName ? ' (You)' : ''}</div>
+        <div class="lb-rank${rC}">${rank+1}</div>
+        <div class="lb-avatar" style="background:${avatarColor(p.name)}">${escHtml((p.name || '?').trim().charAt(0).toUpperCase())}</div>
+        <div class="lb-name">${escHtml(p.name)}${p.name === myName ? ' (You)' : ''}</div>
         <div class="lb-score">${p.score.toLocaleString()}</div>`;
       el.appendChild(row);
     });

@@ -8,3 +8,12 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      # Paste the service-account key JSON here in the Render dashboard.
+      # Without it the quiz still runs, but nothing is persisted to Sheets.
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      # Optional: override the spreadsheet, admin password, or instance label.
+      - key: QUIZ_SHEET_ID
+        sync: false
+      - key: ADMIN_PASS
+        sync: false

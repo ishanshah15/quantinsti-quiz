@@ -3,428 +3,861 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuantInsti Quiz — Host Panel</title>
+  <title>QuantInsti Quiz | Host Panel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:      #07091a;
-      --surface: #0e1530;
-      --s2:      #19254a;
-      --border:  rgba(255,255,255,0.07);
-      --primary: #2563eb;
-      --ph:      #3b7af8;
-      --gold:    #f59e0b;
-      --green:   #22c55e;
-      --red:     #ef4444;
-      --text:    #eef2ff;
-      --muted:   #7b8cb8;
+      /* QI light palette: navy primary, yellow accent, neutral greys */
+      --bg:      #f8f9fc;
+      --surface: #ffffff;
+      --tint:    #f4f6fa;
+      --s2:      #eaf1fb;
+      --border:  #d0d7e3;
+      --border-soft: #e3e9f2;
+
+      --navy:      #173871;
+      --navy-dark: #0f2650;
+      --navy-mid:  #2e77c9;
+      --navy-soft: #eaf1fb;
+
+      --yellow:      #ffdc57;
+      --yellow-dark: #a67c00;
+
+      --green:      #1b7f4d;
+      --green-dark: #146239;
+      --red:        #c0392b;
+      --red-dark:   #9c0006;
+
+      --primary: var(--navy);
+      --text:    #1a1a2e;
+      --muted:   #667085;
       --r: 14px;
+      --shadow-sm: 0 1px 2px rgba(23,56,113,.06);
+      --shadow-md: 0 4px 16px rgba(23,56,113,.09);
+      --shadow-lg: 0 18px 48px rgba(23,56,113,.16);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text); min-height: 100vh; background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @keyframes screenIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
 
     /* HEADER */
     header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 32px; background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+      padding: 12px 32px; background: var(--surface);
       border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+      box-shadow: var(--shadow-sm);
     }
-    .logo-img  { height: 72px; object-fit: contain; }
+    .logo-img  { height: 46px; object-fit: contain; }
+    .header-mid { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .host-badge {
-      background: rgba(37,99,235,.2); border: 1px solid rgba(37,99,235,.4);
-      color: #93c5fd; padding: 4px 14px; border-radius: 100px;
-      font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      background: var(--navy-soft); border: 1px solid #c3d6f2;
+      color: var(--navy); padding: 5px 13px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
     }
-    .conn-wrap { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
-    .conn-dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    .host-name-badge { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .host-name-badge strong { color: var(--navy); font-weight: 700; }
+    .conn-wrap { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .conn-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
     .conn-dot.off { background: var(--red); animation: none; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-    .page { max-width: 1000px; margin: 0 auto; padding: 36px 24px; }
+    /* RECONNECT BANNER */
+    .reconnect-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 250;
+      background: var(--yellow); color: var(--navy-dark);
+      padding: 10px 16px; font-size: 14px; font-weight: 600;
+      display: none; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
+    }
+    .reconnect-banner.show { display: flex; }
+    .reconnect-spinner {
+      width: 15px; height: 15px; border: 2px solid rgba(15,38,80,.25);
+      border-top-color: var(--navy-dark); border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .reconnect-btn {
+      background: var(--navy); color: #fff; border: none; border-radius: 6px;
+      padding: 6px 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+    }
+    .reconnect-btn:hover { background: var(--navy-dark); }
+
+    /* Persistent "what's running" bar shown during question/results/leaderboard/gameover */
+    .quiz-pill {
+      display: none; align-items: center; justify-content: center; gap: 8px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 9px 16px; font-size: 13px; font-weight: 600; color: var(--navy);
+      text-align: center;
+    }
+    .quiz-pill .qp-progress { color: var(--muted); font-weight: 500; }
+
+    .page { max-width: 1000px; margin: 0 auto; padding: 32px 24px 56px; }
     .screen { display: none; }
-    .screen.active { display: block; }
+    .screen.active { display: block; animation: screenIn .3s ease; }
 
     /* LOBBY */
-    .lobby-hero { text-align: center; margin-bottom: 32px; }
-    .lobby-hero h1 { font-size: 44px; font-weight: 900; line-height: 1.15; margin-bottom: 6px; }
-    .lobby-hero h1 span { color: var(--ph); }
-    .lobby-hero p { color: var(--muted); font-size: 16px; }
+    .lobby-hero { text-align: center; margin-bottom: 22px; }
+    .lobby-eyebrow { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 8px; font-weight: 700; }
+    .lobby-hero h1 { font-size: 34px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; color: var(--navy); letter-spacing: -.5px; }
+    .lobby-hero p { color: var(--muted); font-size: 15px; font-weight: 500; }
+
+    /* Active quiz banner: always visible in the lobby */
+    .active-quiz-banner {
+      display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--navy);
+      border-radius: 8px; padding: 13px 22px; margin-bottom: 18px; text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .aqb-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--muted); }
+    .aqb-subject { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .aqb-count { font-size: 12px; font-weight: 500; color: var(--muted); }
 
     .join-box {
-      background: var(--surface); border: 1px solid rgba(37,99,235,.25);
-      border-radius: var(--r); padding: 20px 32px; text-align: center; margin-bottom: 28px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 22px 32px; margin-bottom: 20px; box-shadow: var(--shadow-sm);
     }
-    .join-box .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .join-box-row { display: flex; align-items: center; justify-content: center; gap: 32px; flex-wrap: wrap; }
+    .join-box-text { text-align: center; }
+    .join-box .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.1px; margin-bottom: 8px; font-weight: 700; }
     .join-box .url-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .join-box .url { font-size: 22px; font-weight: 700; color: #93c5fd; word-break: break-all; }
-    .copy-btn {
-      flex-shrink: 0; background: rgba(37,99,235,.15); border: 1px solid rgba(37,99,235,.35);
-      color: #93c5fd; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700;
-      font-family: inherit; cursor: pointer; transition: background .15s, color .15s;
+    .join-box .url { font-size: 21px; font-weight: 700; color: var(--navy); word-break: break-all; letter-spacing: -.3px; }
+    .qr-hint { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 8px; }
+    .join-qr {
+      width: 104px; height: 104px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; padding: 5px; flex-shrink: 0;
     }
-    .copy-btn:hover { background: rgba(37,99,235,.3); }
-    .copy-btn.copied { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.35); color: var(--green); }
+    .copy-btn {
+      flex-shrink: 0; background: var(--navy-soft); border: 1px solid #c3d6f2;
+      color: var(--navy); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: background .15s;
+    }
+    .copy-btn:hover { background: #dbe8fa; }
+    .copy-btn.copied { background: var(--navy); color: #fff; border-color: var(--navy); }
 
-    /* Player grid — chips centered both ways */
+    /* Participant grid */
     .players-card {
       background: var(--surface); border-radius: var(--r);
-      padding: 24px; margin-bottom: 28px; border: 1px solid var(--border);
-      min-height: 120px;
+      padding: 22px; margin-bottom: 26px; border: 1px solid var(--border);
+      min-height: 120px; box-shadow: var(--shadow-sm);
     }
     .players-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 12px; min-height: 80px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px; min-height: 76px;
     }
     .p-chip {
-      background: var(--s2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px 10px;
-      font-size: 17px; font-weight: 700;
+      position: relative;
+      background: var(--tint); border: 1px solid var(--border-soft);
+      border-radius: 8px; padding: 12px 10px;
+      font-size: 15px; font-weight: 600; color: var(--text);
       display: flex; align-items: center; justify-content: center;
-      text-align: center; animation: pop .3s ease;
+      text-align: center; animation: pop .25s ease;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       transition: opacity .3s, border-color .3s;
     }
-    .p-chip.disconnected { opacity: .4; border-color: rgba(239,68,68,.3); }
-    @keyframes pop { from{transform:scale(.75);opacity:0} to{transform:scale(1);opacity:1} }
-    .empty-hint { text-align: center; color: var(--muted); font-size: 14px; padding: 24px; width: 100%; grid-column: 1/-1; }
+    .p-chip.disconnected { opacity: .45; border-color: #f0c9c4; }
+    .p-chip-remove {
+      position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
+      border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #fff;
+      font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p-chip-remove:hover { background: var(--red-dark); }
+    @keyframes pop { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+    .empty-hint { text-align: center; color: var(--muted); font-size: 14px; font-weight: 500; padding: 24px; width: 100%; grid-column: 1/-1; }
 
     /* BUTTONS */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 15px 36px; border-radius: 11px;
-      font-size: 17px; font-weight: 700; font-family: inherit;
-      border: none; cursor: pointer; transition: all .18s; width: 100%;
+      padding: 14px 32px; border-radius: 8px;
+      font-size: 15px; font-weight: 700; font-family: inherit;
+      border: none; cursor: pointer; transition: background .15s, box-shadow .15s, opacity .15s; width: 100%;
     }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: var(--ph); transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--navy); color: #fff; box-shadow: var(--shadow-sm); }
+    .btn-primary:hover:not(:disabled) { background: var(--navy-dark); box-shadow: var(--shadow-md); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
     .btn-outline {
-      background: transparent; color: var(--muted);
-      border: 1px solid rgba(255,255,255,.15); padding: 8px 20px;
-      font-size: 13px; width: auto; border-radius: 8px;
+      background: var(--surface); color: var(--navy);
+      border: 1px solid var(--border); padding: 8px 18px;
+      font-size: 13px; width: auto; border-radius: 6px;
     }
-    .btn-outline:hover { border-color: var(--primary); color: #93c5fd; }
-    .btn-ghost { background: var(--s2); color: var(--text); border: 1px solid var(--border); margin-top: 20px; }
-    .btn-ghost:hover { background: #253060; }
+    .btn-outline:hover { border-color: var(--navy); background: var(--navy-soft); }
+    .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); margin-top: 16px; }
+    .btn-ghost:hover { background: var(--tint); }
     .btn-danger {
-      background: rgba(239,68,68,.14);
-      color: #fca5a5;
-      border: 1px solid rgba(239,68,68,.45);
-      padding: 8px 14px;
-      font-size: 13px;
-      width: auto;
-      border-radius: 8px;
+      background: #fdf1f0; color: var(--red-dark);
+      border: 1px solid #f0c9c4; padding: 8px 14px;
+      font-size: 13px; width: auto; border-radius: 6px;
     }
-    .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,.24); color: #fecaca; }
+    .btn-danger:hover:not(:disabled) { background: #fbe4e2; }
     .btn-danger:disabled { opacity: .45; cursor: not-allowed; }
 
     /* COUNTDOWN OVERLAY */
     .countdown-overlay {
       position: fixed; inset: 0; z-index: 100;
-      background: rgba(7,9,26,.92);
+      background: rgba(248,249,252,.97);
       display: none; flex-direction: column;
-      align-items: center; justify-content: center; gap: 16px;
+      align-items: center; justify-content: center; gap: 14px;
     }
     .countdown-overlay.show { display: flex; }
     .countdown-num {
-      font-size: 160px; font-weight: 900; line-height: 1;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      animation: countPop .5s ease;
+      font-size: 150px; font-weight: 800; line-height: 1; color: var(--navy);
+      letter-spacing: -4px; animation: countPop .45s ease;
     }
-    @keyframes countPop { from{transform:scale(1.5);opacity:0} to{transform:scale(1);opacity:1} }
-    .countdown-label { font-size: 18px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    @keyframes countPop { from{transform:scale(1.4);opacity:0} to{transform:scale(1);opacity:1} }
+    .countdown-label { font-size: 14px; color: var(--muted); letter-spacing: 2.4px; text-transform: uppercase; font-weight: 700; }
 
     /* QUESTION */
-    .q-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .q-label  { font-size: 14px; color: var(--muted); font-weight: 600; }
-    .q-label strong { color: var(--text); }
-    .timer-big { font-size: 64px; font-weight: 900; line-height: 1; transition: color .3s; }
-    .timer-big.warn   { color: var(--gold); }
+    .q-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 14px; }
+    .q-label  { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .q-label strong { color: var(--navy); font-weight: 700; }
+    .timer-big { font-size: 56px; font-weight: 800; line-height: 1; color: var(--navy); transition: color .3s; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+    .timer-big.warn   { color: var(--yellow-dark); }
     .timer-big.danger { color: var(--red); }
 
-    .prog-track { width: 100%; height: 7px; background: var(--s2); border-radius: 100px; overflow: hidden; margin-bottom: 28px; }
+    .prog-track { width: 100%; height: 6px; background: var(--border-soft); border-radius: 100px; overflow: hidden; margin-bottom: 26px; }
     .prog-bar   { height: 100%; border-radius: 100px; background: var(--primary); transition: width .3s linear, background .3s; }
 
-    /* Question centered prominently */
     .q-center-wrap {
       display: flex; align-items: center; justify-content: center;
       min-height: 160px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 32px; margin-bottom: 20px;
+      border-radius: var(--r); padding: 34px; margin-bottom: 18px; box-shadow: var(--shadow-sm);
     }
-    .q-text { font-size: 28px; font-weight: 700; line-height: 1.45; text-align: center; }
+    .q-text { font-size: 26px; font-weight: 600; line-height: 1.45; text-align: center; color: var(--text); overflow-wrap: break-word; word-break: break-word; }
 
-    /* Options at bottom — hidden until reveal */
+    /* Options at bottom: hidden until reveal */
     .opts-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;
       opacity: 0; max-height: 0; overflow: hidden; pointer-events: none;
       transition: opacity .5s ease, max-height .5s ease;
     }
-    .opts-grid.revealed { opacity: 1; max-height: 300px; pointer-events: auto; }
+    .opts-grid.revealed { opacity: 1; max-height: 340px; pointer-events: auto; }
     .opt-tile {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 18px; border-radius: 10px; color: var(--text);
+      display: flex; align-items: center; gap: 12px; min-width: 0;
+      padding: 14px 18px; border-radius: 8px; color: #fff;
       font-size: 15px; font-weight: 600;
-      background: var(--s2); border: 1px solid var(--border);
     }
+    .opt-tile span { min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+    .opt-tile.a { background: var(--navy); }
+    .opt-tile.b { background: var(--navy-mid); }
+    .opt-tile.c { background: var(--yellow); color: var(--navy-dark); }
+    .opt-tile.d { background: var(--green); }
     .opt-lbl {
-      width: 30px; height: 30px; background: rgba(255,255,255,.1);
-      border-radius: 6px; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 900; flex-shrink: 0; color: var(--muted);
+      width: 26px; height: 26px; background: rgba(255,255,255,.22);
+      border-radius: 5px; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; flex-shrink: 0;
     }
+    .opt-tile.c .opt-lbl { background: rgba(15,38,80,.14); }
 
     .ans-row {
       background: var(--surface); border-radius: var(--r); border: 1px solid var(--border);
       padding: 16px 22px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-sm);
     }
-    .ans-row .lbl { font-size: 13px; color: var(--muted); margin-bottom: 2px; }
-    .ans-count { font-size: 26px; font-weight: 900; color: var(--green); }
+    .ans-row .lbl { font-size: 12px; color: var(--muted); margin-bottom: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; }
+    .ans-count { font-size: 24px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
 
     /* RESULTS */
-    .results-title { text-align: center; font-size: 30px; font-weight: 800; margin-bottom: 28px; }
+    .results-title { text-align: center; font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--navy); letter-spacing: -.4px; }
+    .res-q {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 18px 24px; text-align: center;
+      font-size: 19px; font-weight: 600; line-height: 1.45; color: var(--text);
+      margin-bottom: 12px; overflow-wrap: break-word; box-shadow: var(--shadow-sm);
+    }
     .correct-box {
-      background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25);
-      border-radius: var(--r); padding: 18px 24px; text-align: center; margin-bottom: 24px;
+      background: #f1f9f5; border: 1px solid #bfe0cd;
+      border-radius: var(--r); padding: 16px 24px; text-align: center; margin-bottom: 22px;
     }
-    .correct-box .lbl { font-size: 11px; color: #4ade80; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-    .correct-box .ans { font-size: 21px; font-weight: 700; color: #86efac; }
+    .correct-box .lbl { font-size: 10px; color: var(--green-dark); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px; font-weight: 800; }
+    .correct-box .ans { font-size: 19px; font-weight: 700; color: var(--navy); }
 
-    .bars { display: flex; flex-direction: column; gap: 12px; }
-    .bar-row { display: grid; grid-template-columns: 44px 1fr 48px; align-items: center; gap: 12px; }
+    .bars { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: grid; grid-template-columns: 38px 1fr 44px; align-items: center; gap: 12px; }
     .bar-lbl {
-      width: 44px; height: 44px; border-radius: 9px; color: #fff;
+      width: 38px; height: 38px; border-radius: 7px; color: #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 900;
+      font-size: 15px; font-weight: 800;
     }
-    .bar-track { height: 44px; background: var(--s2); border-radius: 9px; overflow: hidden; }
+    .bar-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .bar-opt {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bar-row.is-correct .bar-opt { color: var(--green-dark); font-weight: 700; }
+    .bar-track { height: 32px; background: var(--border-soft); border-radius: 6px; overflow: hidden; }
     .bar-fill {
-      height: 100%; border-radius: 9px;
+      height: 100%; border-radius: 6px;
       transition: width .85s cubic-bezier(.22,.61,.36,1);
-      display: flex; align-items: center; padding-left: 14px;
-      font-size: 13px; font-weight: 700; color: rgba(255,255,255,.85); min-width: 0;
+      display: flex; align-items: center; padding-left: 12px;
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,.92); min-width: 0;
     }
-    .bar-cnt { font-size: 18px; font-weight: 800; text-align: right; }
-    .bar-row.is-correct .bar-lbl { box-shadow: 0 0 0 2px #22c55e; }
+    .bar-cnt { font-size: 17px; font-weight: 800; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+    .bar-row.is-correct .bar-lbl { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--green); }
 
-    /* MID-GAME LEADERBOARD */
-    .lb-title { text-align: center; font-size: 34px; font-weight: 900; margin-bottom: 28px; }
-    .lb-list  { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    /* MID-QUIZ LEADERBOARD */
+    .lb-title { text-align: center; font-size: 28px; font-weight: 800; margin-bottom: 5px; color: var(--navy); letter-spacing: -.5px; }
+    .lb-progress { text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 22px; }
+    .lb-list  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 26px; }
     .lb-row {
       display: flex; align-items: center; gap: 16px;
-      padding: 14px 22px; background: var(--surface); border-radius: 11px;
-      border: 1px solid var(--border); animation: slideIn .4s ease both;
+      padding: 13px 20px; background: var(--surface); border-radius: 8px;
+      border: 1px solid var(--border-soft); animation: slideIn .35s ease both; box-shadow: var(--shadow-sm);
     }
-    @keyframes slideIn { from{transform:translateX(-16px);opacity:0} to{transform:translateX(0);opacity:1} }
-    .lb-rank { width: 34px; text-align: center; font-size: 18px; font-weight: 900; color: var(--muted); }
-    .lb-rank.r1{color:#fbbf24} .lb-rank.r2{color:#94a3b8} .lb-rank.r3{color:#c2773a}
-    .lb-name  { flex: 1; font-size: 20px; font-weight: 600; }
-    .lb-score { font-size: 20px; font-weight: 800; color: var(--ph); }
+    @keyframes slideIn { from{transform:translateX(-12px);opacity:0} to{transform:translateX(0);opacity:1} }
+    .lb-rank { width: 30px; text-align: center; font-size: 17px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .lb-rank.r1{color:var(--yellow-dark)} .lb-rank.r2{color:#7b8794} .lb-rank.r3{color:#a06a3c}
+    .lb-name  { flex: 1; font-size: 17px; font-weight: 600; color: var(--text); }
+    .lb-score { font-size: 18px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
 
-    /* ── F1 PODIUM ── */
-    .go-hero { text-align: center; margin-bottom: 36px; }
-    .go-title {
-      font-size: 46px; font-weight: 900;
-      background: linear-gradient(130deg, #fbbf24, #f59e0b);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    /* ── FINAL STANDINGS: PODIUM ── */
+    .go-hero { text-align: center; margin-bottom: 24px; }
+    .go-eyebrow { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; }
+    .go-title { font-size: 38px; font-weight: 800; color: var(--navy); letter-spacing: -1px; }
+    .go-sub { font-size: 15px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+    .champ-banner {
+      display: none; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+      max-width: 620px; margin: 0 auto 28px;
+      background: linear-gradient(120deg, #fffae2, #fff4c9);
+      border: 1px solid var(--yellow); border-radius: 10px; padding: 15px 30px;
+      font-size: 19px; font-weight: 700; color: var(--navy-dark); text-align: center;
     }
-    .go-sub { font-size: 16px; color: var(--muted); margin-top: 6px; }
+    .champ-banner.show { display: flex; animation: pop .4s cubic-bezier(.22,1.4,.36,1); }
+    .champ-banner .champ-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--yellow-dark); font-weight: 800; }
+    .champ-banner .champ-name { color: var(--navy); }
 
     .podium-wrap {
       display: flex; align-items: flex-end; justify-content: center;
-      gap: 6px; margin: 0 auto 36px; max-width: 620px;
+      gap: 10px; margin: 0 auto 34px; max-width: 600px;
     }
-    .podium-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .podium-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+    .podium-crown { height: 30px; opacity: 0; transition: opacity .4s ease .25s; margin-bottom: -2px; }
+    .podium-crown span { display: inline-block; font-size: 26px; }
+    .podium-col.revealed .podium-crown { opacity: 1; }
+    .podium-avatar {
+      width: 54px; height: 54px; border-radius: 50%; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: #fff;
+      border: 3px solid #fff; box-shadow: var(--shadow-md);
+      transform: scale(0); transition: transform .45s cubic-bezier(.22,1.5,.36,1) .12s;
+    }
+    .p1 .podium-avatar { width: 64px; height: 64px; font-size: 26px; background: linear-gradient(160deg,#ffe07a,var(--yellow-dark)); color: var(--navy-dark); }
+    .p2 .podium-avatar { background: linear-gradient(160deg,#c8d1dc,#8b97a6); }
+    .p3 .podium-avatar { background: linear-gradient(160deg,#3b86d6,var(--navy)); }
+    .podium-col.revealed .podium-avatar { transform: scale(1); }
     .podium-name {
-      font-size: 20px; font-weight: 800; text-align: center;
-      margin-bottom: 4px; word-break: break-word; padding: 0 4px;
+      font-size: 18px; font-weight: 700; text-align: center;
+      margin-bottom: 3px; word-break: break-word; padding: 0 4px; color: var(--text);
+      opacity: 0; transition: opacity .3s ease;
     }
-    .podium-pts { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .podium-pts { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: 600; opacity: 0; transition: opacity .3s ease; font-variant-numeric: tabular-nums; }
     .podium-block {
-      width: 100%; border-radius: 10px 10px 0 0;
+      position: relative; overflow: hidden;
+      width: 100%; border-radius: 8px 8px 0 0;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 4px;
+      gap: 2px; transform: scaleY(0); transform-origin: bottom;
+      transition: transform .55s cubic-bezier(.22,1.3,.4,1);
     }
-    .podium-medal { font-size: 32px; }
-    .podium-rank  { font-size: 22px; font-weight: 900; color: rgba(0,0,0,.5); }
-    .p1 .podium-block { height: 130px; background: linear-gradient(180deg,#fbbf24,#d97706); }
-    .p2 .podium-block { height: 100px; background: linear-gradient(180deg,#94a3b8,#64748b); }
-    .p3 .podium-block { height: 80px;  background: linear-gradient(180deg,#cd7c3a,#92400e); }
-    .p1 .podium-name  { font-size: 24px; }
+    .podium-block::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(255,255,255,.28); }
+    .podium-rank  { font-size: 32px; font-weight: 800; color: rgba(255,255,255,.95); line-height: 1; }
+    .p1 .podium-block { height: 132px; background: linear-gradient(180deg,#ffe07a,var(--yellow-dark)); }
+    .p1 .podium-rank { color: var(--navy-dark); }
+    .p2 .podium-block { height: 100px; background: linear-gradient(180deg,#c8d1dc,#8b97a6); }
+    .p3 .podium-block { height: 80px;  background: linear-gradient(180deg,#3b86d6,var(--navy)); }
+    .p1 .podium-name  { font-size: 21px; }
+    .podium-col.revealed .podium-block { transform: scaleY(1); }
+    .podium-col.revealed .podium-name,
+    .podium-col.revealed .podium-pts { opacity: 1; }
 
     .rest-list { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+    .lb-avatar {
+      width: 32px; height: 32px; border-radius: 50%; color: #fff; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+
+    /* Confetti + firework celebration layer, in brand colours */
+    #confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
+    .confetti-piece {
+      position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px;
+      animation-name: confettiFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(90vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0; }
+    }
+    .firework-spark {
+      position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      animation: sparkOut .8s ease-out forwards;
+    }
+    @keyframes sparkOut {
+      0%   { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; }
+    }
 
     /* TABS */
-    .tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
     .tab-btn {
-      padding: 10px 22px; border: none; background: transparent;
+      padding: 10px 20px; border: none; background: transparent;
       color: var(--muted); font-size: 14px; font-weight: 600;
       cursor: pointer; font-family: inherit;
       border-bottom: 2px solid transparent; margin-bottom: -1px;
-      border-radius: 8px 8px 0 0; transition: color .15s;
+      transition: color .15s;
     }
-    .tab-btn.active { color: var(--text); border-bottom-color: var(--primary); }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 700; }
     .tab-btn:hover:not(.active) { color: var(--text); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
     /* QUIZ MANAGER */
-    .qm-card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; margin-bottom: 28px; }
-    .qm-active-bar {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 14px;
-    }
-    .qm-active-label { color: var(--muted); }
-    .qm-active-name { font-weight: 700; color: var(--ph); }
-    .qm-active-count { color: var(--muted); font-size: 13px; }
+    .qm-card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; margin-bottom: 26px; box-shadow: var(--shadow-sm); }
     .qm-quiz-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border); min-height: 60px; }
     .qm-quiz-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px; border-radius: 9px;
-      background: var(--s2); border: 1px solid var(--border); transition: border-color .15s;
+      padding: 11px 14px; border-radius: 8px;
+      background: var(--tint); border: 1px solid var(--border-soft); transition: border-color .15s, background .15s;
     }
-    .qm-quiz-row.is-active { border-color: var(--primary); background: rgba(37,99,235,.1); }
-    .qm-quiz-name { flex: 1; font-weight: 600; font-size: 15px; }
-    .qm-quiz-count { font-size: 12px; color: var(--muted); }
+    .qm-quiz-row.is-active { border-color: var(--navy); background: var(--navy-soft); }
+    .qm-quiz-id { color: var(--muted); font-weight: 700; font-size: 12px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .qm-quiz-name { flex: 1; min-width: 0; }
+    .qm-quiz-subject { font-weight: 600; font-size: 15px; color: var(--text); display: block; }
+    .qm-quiz-meta { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+    .qm-quiz-count { font-size: 12px; color: var(--muted); font-weight: 500; flex-shrink: 0; }
     .qm-badge {
-      font-size: 10px; font-weight: 700; letter-spacing: .5px;
-      background: rgba(37,99,235,.25); color: #93c5fd;
-      padding: 2px 8px; border-radius: 100px; text-transform: uppercase; white-space: nowrap;
+      font-size: 10px; font-weight: 800; letter-spacing: .6px;
+      background: var(--navy); color: #fff;
+      padding: 3px 9px; border-radius: 4px; text-transform: uppercase; white-space: nowrap;
     }
     .qm-time-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px; border-bottom: 1px solid var(--border); gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border); gap: 12px;
     }
-    .qm-time-label { font-size: 14px; color: var(--muted); font-weight: 600; }
+    .qm-time-label { font-size: 14px; color: var(--text); font-weight: 600; }
     .qm-time-select {
-      padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
-      background: var(--s2); color: var(--text); font-size: 14px; font-family: inherit;
+      padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit;
       outline: none; cursor: pointer;
     }
-    .qm-time-select:focus { border-color: var(--primary); }
-    .qm-upload { padding: 20px; border-bottom: 1px solid var(--border); }
-    .qm-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; }
+    .qm-time-select:focus { border-color: var(--navy); }
+    .qm-upload { padding: 22px; }
+    .qm-section-title { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .qm-help-text { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 16px; line-height: 1.5; }
+    .qm-field-label { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 5px; display: block; }
+    .qm-field-label .req { color: var(--red); }
     .qm-input {
-      width: 100%; padding: 10px 14px; border-radius: 9px;
-      border: 1px solid var(--border); background: var(--s2);
+      width: 100%; padding: 11px 14px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--surface);
       color: var(--text); font-size: 14px; font-family: inherit;
-      outline: none; margin-bottom: 10px;
+      outline: none; margin-bottom: 12px; transition: border-color .15s, box-shadow .15s;
     }
-    .qm-input:focus { border-color: var(--primary); }
-    .qm-textarea {
-      width: 100%; height: 130px; padding: 12px 14px; border-radius: 9px;
-      border: 1px solid var(--border); background: var(--s2); color: var(--text);
-      font-size: 12px; font-family: 'Courier New', monospace;
-      resize: vertical; outline: none; margin-bottom: 10px;
+    .qm-input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(23,56,113,.1); }
+    .qm-msg { font-size: 13px; margin-top: 10px; min-height: 18px; font-weight: 600; }
+    .qm-msg.ok  { color: var(--green-dark); }
+    .qm-msg.err { color: var(--red-dark); }
+
+    /* Drag-and-drop file picker */
+    .dropzone {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 26px 20px; text-align: center; cursor: pointer;
+      transition: border-color .15s, background .15s; margin: 4px 0 12px;
+      background: var(--tint);
     }
-    .qm-textarea:focus { border-color: var(--primary); }
-    .qm-btn-row { display: flex; gap: 10px; }
-    .qm-msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
-    .qm-msg.ok  { color: var(--green); }
-    .qm-msg.err { color: var(--red); }
-    .qm-sample { padding: 16px 20px; }
-    .qm-sample summary {
-      font-size: 13px; font-weight: 600; color: var(--muted);
-      cursor: pointer; user-select: none; list-style: none;
-      display: flex; align-items: center; gap: 7px;
+    .dropzone:hover, .dropzone.drag-over { border-color: var(--navy); background: var(--navy-soft); }
+    .dropzone-icon { margin-bottom: 8px; color: var(--navy); }
+    .dropzone-text { font-weight: 700; font-size: 14px; color: var(--text); }
+    .dropzone-sub { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+
+    .file-picked {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--navy-soft); border: 1px solid #c3d6f2; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 12px; animation: pop .22s ease;
     }
-    .qm-sample summary::-webkit-details-marker { display: none; }
-    .qm-sample summary::before { content: '▶'; font-size: 10px; transition: transform .2s; }
-    .qm-sample[open] summary::before { transform: rotate(90deg); }
-    .qm-sample pre {
-      margin-top: 14px; padding: 16px; background: #05070f;
-      border-radius: 9px; border: 1px solid var(--border);
-      font-size: 12px; color: #7dd3fc; overflow-x: auto; line-height: 1.75; white-space: pre;
+    .file-picked-icon { color: var(--navy); display: flex; flex-shrink: 0; }
+    .file-picked-info { flex: 1; min-width: 0; }
+    .file-picked-name { font-weight: 600; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-picked-size { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .file-picked-remove {
+      background: #fff; border: 1px solid var(--border); color: var(--red-dark);
+      width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-weight: 700; flex-shrink: 0; font-size: 13px;
     }
+    .file-picked-remove:hover { background: #fdf1f0; border-color: #f0c9c4; }
+
+    .qm-template-links { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+    .qm-template-links a { color: var(--navy); font-weight: 700; text-decoration: none; }
+    .qm-template-links a:hover { text-decoration: underline; }
+
+    /* Copy-to-LLM prompt block */
+    .qm-llm {
+      margin: 16px 0 4px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); overflow: hidden;
+    }
+    .qm-llm-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 11px 14px; background: var(--tint); border-bottom: 1px solid var(--border);
+    }
+    .qm-llm-title { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .qm-llm-body {
+      padding: 13px 14px; font-size: 13px; line-height: 1.6; color: var(--text);
+      white-space: pre-wrap; word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .qm-llm-hint { font-size: 12px; color: var(--muted); font-weight: 500; padding: 0 14px 13px; line-height: 1.5; }
+    .qm-copy-btn {
+      background: var(--navy); color: #fff; border: none; border-radius: 6px;
+      padding: 7px 15px; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: inherit; flex-shrink: 0; transition: background .15s;
+    }
+    .qm-copy-btn:hover { background: var(--navy-dark); }
+    .qm-copy-btn.copied { background: var(--green); }
+
+    /* Mode switch: Host a Quiz vs Manage Quizzes */
+    .mode-switch { display: inline-flex; gap: 3px; background: var(--tint); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+    .mode-switch button { border: none; background: transparent; font-family: inherit; font-weight: 600; font-size: 13px; color: var(--muted); padding: 7px 15px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+    .mode-switch button.active { background: var(--navy); color: #fff; font-weight: 700; }
+    .btn-logout {
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+      font-family: inherit; font-weight: 600; font-size: 13px; padding: 7px 14px;
+      border-radius: 6px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red-dark); }
+
+    /* In Manage Quizzes mode, hide everything to do with running the live quiz so
+       someone who only wants to upload cannot touch a quiz in progress. */
+    body.mode-manager #btn-force-stop,
+    body.mode-manager .conn-wrap,
+    body.mode-manager .lobby-hero,
+    body.mode-manager .active-quiz-banner,
+    body.mode-manager .join-box,
+    body.mode-manager #btn-start,
+    body.mode-manager .quiz-pill { display: none !important; }
+
+    /* Mode-scoped tab bars and panels: each capability lives in exactly one mode.
+       Host a Quiz     → Participants + Choose Quiz (select only).
+       Manage Quizzes  → Upload a New Quiz + Quiz Library (preview/delete only). */
+    body.mode-manager .host-only,
+    body:not(.mode-manager) .manage-only,
+    body:not(.mode-manager) .tab-panel[data-tab="upload"],
+    body.mode-manager .tab-panel[data-tab="players"] { display: none !important; }
+    /* Time per question is a live-hosting setting; hide it in Manage Quizzes. */
+    body.mode-manager .qm-time-row { display: none !important; }
+
+    /* Distinct look for Manage Quizzes, so it is immediately obvious you are not
+       on a live-hosting screen. */
+    body.mode-manager { background: #eef2f8; }
+    body.mode-manager .header-mid { flex: 1 1 auto; justify-content: center; }
+
+    .qm-list-wrap { padding: 14px; }
+    .qm-list-wrap .qm-quiz-list { border-bottom: none; padding: 0; }
+    .qm-list-toolbar { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+    .qm-list-toolbar .qm-input { margin-bottom: 0; flex: 1; }
+    .qm-refresh-btn { width: auto; flex-shrink: 0; padding: 0 16px; font-size: 13px; white-space: nowrap; }
+    .qm-refresh-btn:disabled { opacity: .55; cursor: default; }
+
+    /* Quiz list load progress */
+    .qm-load-status { margin-bottom: 12px; }
+    .qm-progress { height: 5px; border-radius: 999px; background: var(--border-soft); overflow: hidden; }
+    .qm-progress-bar { height: 100%; width: 30%; border-radius: 999px; background: var(--navy); transition: width .3s ease, background .3s ease; }
+    .qm-progress-bar.indet { width: 40%; animation: qmIndet 1.1s ease-in-out infinite; }
+    .qm-progress-bar.ok { width: 100% !important; background: var(--green); animation: none; }
+    .qm-progress-bar.err { width: 100% !important; background: var(--red); animation: none; }
+    @keyframes qmIndet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+    .qm-status-text { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+    .qm-status-text.ok  { color: var(--green-dark); }
+    .qm-status-text.err { color: var(--red-dark); }
+
+    /* Empty / failed-load state with a refresh button */
+    .qm-list-empty { text-align: center; padding: 22px 12px; color: var(--muted); font-size: 13px; font-weight: 500; }
+    .qm-list-empty .btn { max-width: 220px; margin: 12px auto 0; }
+
+    /* Quiz preview modal */
+    .preview-overlay {
+      position: fixed; inset: 0; z-index: 150; background: rgba(15,38,80,.45);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .preview-modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      width: 100%; max-width: 720px; max-height: 86vh; display: flex; flex-direction: column;
+      overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+    .preview-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--tint);
+    }
+    .preview-title { font-size: 16px; font-weight: 700; color: var(--navy); line-height: 1.35; }
+    .preview-sub { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+    .preview-close {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-weight: 700;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .preview-close:hover { background: var(--tint); color: var(--text); }
+    .preview-body { padding: 16px 20px; overflow-y: auto; }
+    .pv-q { border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; background: var(--tint); }
+    .pv-q-num { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+    .pv-q-concept { font-size: 12px; font-weight: 700; color: var(--navy); margin-top: 3px; }
+    .pv-q-text { font-size: 15px; font-weight: 600; color: var(--text); margin: 7px 0 10px; line-height: 1.45; }
+    .pv-opt {
+      display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;
+      padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-soft);
+      background: var(--surface); color: var(--text); margin-bottom: 6px;
+    }
+    .pv-opt.correct { border-color: #bfe0cd; background: #f1f9f5; color: var(--green-dark); font-weight: 700; }
+    .pv-opt-letter { font-weight: 800; flex-shrink: 0; color: var(--muted); }
+    .pv-opt.correct .pv-opt-letter { color: var(--green-dark); }
+    .pv-opt .pv-tick { margin-left: auto; color: var(--green-dark); font-weight: 700; font-size: 12px; }
+
+    .manager-note { max-width: 660px; margin: 0 auto 18px; padding: 13px 18px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--navy-mid); color: var(--muted); font-size: 13px; font-weight: 500; text-align: left; line-height: 1.55; }
+    body:not(.mode-manager) .manager-note { display: none; }
+    .multihost-banner { display: none; align-items: center; gap: 12px; max-width: 900px; margin: 14px auto 0; padding: 12px 18px; border-radius: 8px; background: #fffae2; border: 1px solid var(--yellow); color: var(--navy-dark); font-size: 13px; font-weight: 600; }
+    .multihost-banner.show { display: flex; }
+    .multihost-banner button { margin-left: auto; border: none; background: var(--navy); color: #fff; font-family: inherit; font-weight: 700; font-size: 12px; padding: 7px 13px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+
+    /* Sheets connection indicator in the Manage Quizzes header */
+    .sheets-note { font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 14px 14px; }
+    .sheets-note.warn { color: var(--yellow-dark); font-weight: 600; }
+
+    /* Sound toggle */
+    .btn-sound {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--navy);
+      font-family: inherit; font-weight: 600; font-size: 13px; padding: 6px 13px;
+      border-radius: 6px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-sound:hover { border-color: var(--navy); background: var(--navy-soft); }
+    .btn-sound.off { color: var(--muted); }
+    .btn-sound svg { flex-shrink: 0; }
   </style>
 </head>
 <body>
 
+<div id="confetti-layer"></div>
+
+<!-- QUIZ PREVIEW MODAL -->
+<div id="preview-overlay" class="preview-overlay" style="display:none;">
+  <div class="preview-modal">
+    <div class="preview-head">
+      <div>
+        <div class="preview-title" id="preview-title">Quiz Preview</div>
+        <div class="preview-sub" id="preview-sub"></div>
+      </div>
+      <button class="preview-close" onclick="closePreview()" title="Close">&#10005;</button>
+    </div>
+    <div class="preview-body" id="preview-body"></div>
+  </div>
+</div>
+
+<!-- QUIZ ADDED CONFIRMATION -->
+<div id="uploaded-overlay" class="preview-overlay" style="display:none;" onclick="if(event.target===this) closeUploadedModal()">
+  <div class="preview-modal" style="max-width:460px;">
+    <div class="preview-head">
+      <div>
+        <div class="preview-title">Quiz added to the library</div>
+        <div class="preview-sub" id="uploaded-sub"></div>
+      </div>
+      <button class="preview-close" onclick="closeUploadedModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="preview-body">
+      <p style="font-size:14px;font-weight:500;color:var(--text);margin:0 0 18px;line-height:1.6;">
+        Saved to the Quiz Library. Preview it there any time, or switch to Host a Quiz when you want to run it live.
+      </p>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" style="width:auto;flex:1;padding:11px 18px;font-size:14px;" onclick="viewLibraryFromModal()">View Quiz Library</button>
+        <button class="btn btn-ghost" style="width:auto;flex:1;padding:11px 18px;font-size:14px;margin-top:0;" onclick="closeUploadedModal()">Upload Another</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECONNECT BANNER -->
+<div class="reconnect-banner" id="reconnect-banner">
+  <div class="reconnect-spinner"></div>
+  <span>Connection lost. Trying to reconnect&hellip;</span>
+  <button class="reconnect-btn" onclick="manualReconnect()">Reconnect Now</button>
+</div>
+
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay" style="position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:44px 40px;width:100%;max-width:380px;text-align:center;">
-    <img src="/logo.png" style="height:64px;display:block;margin:0 auto 24px;" onerror="this.style.display='none'">
-    <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Host Login</h2>
-    <p style="color:var(--muted);font-size:14px;margin-bottom:28px;">Sign in to access the host panel</p>
+<div id="login-overlay" style="position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:100%;max-width:392px;box-shadow:var(--shadow-md);">
+    <img src="/logo.png" style="height:44px;display:block;margin:0 auto 26px;" alt="QuantInsti" onerror="this.style.display='none'">
+    <h2 style="font-size:21px;font-weight:800;margin-bottom:6px;color:var(--navy);text-align:center;letter-spacing:-.3px;">Host Sign In</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;font-weight:500;text-align:center;">Sign in to run or manage a quiz session</p>
+    <label class="qm-field-label">Your name</label>
+    <input id="login-name" class="qm-input" type="text" placeholder="e.g. Ishan Shah" autocomplete="name">
+    <label class="qm-field-label">Username</label>
     <input id="login-user" class="qm-input" type="text" placeholder="Username" autocomplete="username">
+    <label class="qm-field-label">Password</label>
     <input id="login-pass" class="qm-input" type="password" placeholder="Password" autocomplete="current-password"
            style="margin-bottom:20px;" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
-    <div id="login-err" style="color:var(--red);font-size:13px;margin-top:14px;min-height:18px;"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    <div id="login-err" style="color:var(--red-dark);font-size:13px;margin-top:14px;min-height:18px;font-weight:600;text-align:center;"></div>
   </div>
 </div>
 
 <!-- COUNTDOWN OVERLAY -->
 <div class="countdown-overlay" id="cd-overlay">
   <div class="countdown-num" id="cd-num">3</div>
-  <div class="countdown-label">Get Ready!</div>
+  <div class="countdown-label">Starting</div>
 </div>
 
 <header>
   <img class="logo-img" src="/logo.png" alt="QuantInsti" onerror="this.style.display='none'">
-  <div class="host-badge">Host Panel</div>
+  <div class="header-mid">
+    <div class="host-badge">Host Panel</div>
+    <div class="host-name-badge" id="host-badge" style="display:none;">Signed in as <strong id="host-name-label"></strong></div>
+    <div class="mode-switch" id="mode-switch" style="display:none;">
+      <button id="mode-live" onclick="setMode('live')">Host a Quiz</button>
+      <button id="mode-manager" onclick="setMode('manager')">Manage Quizzes</button>
+    </div>
+    <button id="btn-sound" class="btn-sound" onclick="toggleSound()" title="Turn quiz sound on or off"></button>
+    <button id="btn-logout" class="btn-logout" onclick="doLogout()" style="display:none;">Log out</button>
+  </div>
   <button class="btn btn-danger" id="btn-force-stop" onclick="forceStop()" disabled>Force Stop</button>
   <div class="conn-wrap">
     <div class="conn-dot" id="conn-dot"></div>
-    <span id="conn-label">Connecting…</span>
+    <span id="conn-label">Connecting&hellip;</span>
   </div>
 </header>
+
+<!-- Warns a live host when another host panel is also connected to this session -->
+<div class="multihost-banner" id="multihost-banner">
+  <span id="multihost-text">Another host is also connected to this session. Your controls affect the same live quiz. If you only want to add or edit quizzes, switch to Manage Quizzes.</span>
+  <button onclick="setMode('manager')">Switch to Manage Quizzes</button>
+</div>
+
+<!-- Persistent subject/topic bar during question/results/leaderboard/gameover -->
+<div class="quiz-pill" id="quiz-pill">
+  <span id="quiz-pill-text">&middot;</span>
+  <span class="qp-progress" id="quiz-pill-progress"></span>
+</div>
 
 <div class="page">
 
   <!-- LOBBY -->
   <div id="s-lobby" class="screen active">
+    <div class="manager-note"><strong>Manage Quizzes.</strong> Upload new quizzes and preview or remove ones in the library here, without affecting any live session. Switch to Host a Quiz only when you actually intend to run a live session, since its controls act on the shared live session and can affect a quiz already in progress.</div>
     <div class="lobby-hero">
-      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Live Quiz Session</div>
-      <h1>Ready to <span>Play?</span></h1>
-      <p>Share the link below with participants</p>
+      <div class="lobby-eyebrow">Live Quiz Session</div>
+      <h1>Ready to begin</h1>
+      <p>Share the link below with your participants</p>
+    </div>
+
+    <div class="active-quiz-banner">
+      <span class="aqb-label">Selected quiz</span>
+      <span class="aqb-subject" id="aqb-subject">&middot;</span>
+      <span class="aqb-count" id="aqb-count"></span>
     </div>
 
     <div class="join-box">
-      <div class="lbl">Players join at</div>
-      <div class="url-row">
-        <div class="url" id="join-url">—</div>
-        <button class="copy-btn" id="copy-btn" onclick="copyJoinUrl()">Copy</button>
+      <div class="join-box-row">
+        <div class="join-box-text">
+          <div class="lbl">Participants join at</div>
+          <div class="url-row">
+            <div class="url" id="join-url">&middot;</div>
+            <button class="copy-btn" id="copy-btn" onclick="copyJoinUrl()">Copy</button>
+          </div>
+          <div class="qr-hint">or scan the QR code with a phone camera</div>
+        </div>
+        <img class="join-qr" id="join-qr" src="/qr-code.png" alt="QR code to join the quiz" onerror="this.style.display='none'">
       </div>
     </div>
 
-    <!-- Tab bar -->
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="players" onclick="switchTab('players')">Players</button>
-      <button class="tab-btn" data-tab="quiz" onclick="switchTab('quiz')">Quiz Manager</button>
+    <!-- Tab bar: Host a Quiz -->
+    <div class="tab-bar host-only">
+      <button class="tab-btn active" data-tab="players" onclick="switchTab('players')">Participants</button>
+      <button class="tab-btn" data-tab="quizlist" onclick="switchTab('quizlist')">Choose Quiz</button>
     </div>
 
-    <!-- Players tab -->
+    <!-- Tab bar: Manage Quizzes -->
+    <div class="tab-bar manage-only">
+      <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload a New Quiz</button>
+      <button class="tab-btn" data-tab="quizlist" onclick="switchTab('quizlist')">Quiz Library</button>
+    </div>
+
+    <!-- Participants tab (Host a Quiz) -->
     <div class="tab-panel active" data-tab="players">
       <div class="players-card">
         <div id="p-count-bar" style="display:none; align-items:center; justify-content:space-between; margin-bottom:16px;">
-          <span style="font-size:15px; font-weight:700; color:var(--muted);">Players joined</span>
-          <span id="p-count" style="font-size:28px; font-weight:900; color:var(--ph);">0</span>
+          <span style="font-size:14px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px;">Participants joined</span>
+          <span id="p-count" style="font-size:26px; font-weight:800; color:var(--navy); font-variant-numeric:tabular-nums;">0</span>
         </div>
         <div class="players-grid" id="p-grid">
-          <div class="empty-hint" id="p-empty">Waiting for players to join…</div>
+          <div class="empty-hint" id="p-empty">Waiting for participants to join&hellip;</div>
         </div>
       </div>
     </div>
 
-    <!-- Quiz Manager tab -->
-    <div class="tab-panel" data-tab="quiz">
+    <!-- Upload a New Quiz tab (Manage Quizzes only) -->
+    <div class="tab-panel" data-tab="upload">
+      <div class="qm-card">
+        <div class="qm-upload">
+          <div class="qm-section-title">Add a new quiz</div>
+          <div class="qm-help-text">Enter the Subject and Topic, then add your question file below. It is saved to the Quiz Library; switch to Host a Quiz to run it live.</div>
+
+          <label class="qm-field-label">Subject <span class="req">*</span></label>
+          <input class="qm-input" id="quiz-subject-input" type="text" placeholder="e.g. AI at Work" oninput="updateUploadBtnState()">
+          <label class="qm-field-label">Topic <span class="req">*</span></label>
+          <input class="qm-input" id="quiz-topic-input" type="text" placeholder="e.g. Custom GPTs" oninput="updateUploadBtnState()">
+
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div class="dropzone-text">Drag and drop your file here</div>
+            <div class="dropzone-sub">or click to browse (.xlsx only)</div>
+          </div>
+          <input type="file" id="quiz-file" accept=".xlsx" style="display:none">
+
+          <div class="file-picked" id="file-picked" style="display:none;">
+            <div class="file-picked-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="file-picked-info">
+              <div class="file-picked-name" id="file-picked-name"></div>
+              <div class="file-picked-size" id="file-picked-size"></div>
+            </div>
+            <button class="file-picked-remove" onclick="clearFileSelect()" title="Remove file">&#10005;</button>
+          </div>
+
+          <div class="qm-template-links">
+            New to this? <a href="/api/quiz/sample.xlsx">Download the Excel template</a>
+          </div>
+
+          <div class="qm-llm">
+            <div class="qm-llm-head">
+              <span class="qm-llm-title">Prompt for an AI assistant</span>
+              <button type="button" class="qm-copy-btn" id="llm-copy-btn" onclick="copyLLMPrompt()">Copy</button>
+            </div>
+            <div class="qm-llm-body" id="llm-prompt-text"></div>
+            <div class="qm-llm-hint">Download the Excel template above, then paste this prompt (with the template attached) into an AI assistant to draft your questions. Review the output against the Guidelines sheet before uploading.</div>
+          </div>
+
+          <button class="btn btn-primary" id="btn-upload" style="margin-top:16px;" disabled onclick="uploadQuiz()">Upload Quiz</button>
+          <div class="qm-msg" id="upload-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz list tab: "Choose Quiz" (Host a Quiz) / "Quiz Library" (Manage Quizzes) -->
+    <div class="tab-panel" data-tab="quizlist">
       <div class="qm-card">
 
-        <!-- Active quiz indicator -->
-        <div class="qm-active-bar">
-          <span class="qm-active-label">Active quiz:</span>
-          <span class="qm-active-name" id="active-quiz-name">Default</span>
-          <span class="qm-active-count" id="active-quiz-count"></span>
-        </div>
-
-        <!-- Global time limit override -->
+        <!-- Time per question: only relevant when hosting a live session -->
         <div class="qm-time-row">
           <span class="qm-time-label">Time per question</span>
           <select class="qm-time-select" id="time-limit-select" onchange="setTimeLimit(this.value)">
-            <option value="">Per question (from JSON)</option>
+            <option value="">Use each question's own time</option>
             <option value="15">15 seconds</option>
             <option value="20">20 seconds</option>
             <option value="30">30 seconds</option>
@@ -435,55 +868,29 @@
           </select>
         </div>
 
-        <!-- Quiz list -->
-        <div class="qm-quiz-list" id="quiz-list">
-          <div style="color:var(--muted);font-size:13px;padding:8px 4px;">Loading quizzes…</div>
-        </div>
-
-        <!-- Upload form -->
-        <div class="qm-upload">
-          <div class="qm-section-title">Upload New Quiz</div>
-          <input class="qm-input" id="quiz-name-input" type="text" placeholder="Quiz name (e.g. Finance Quiz 2)">
-          <textarea class="qm-textarea" id="quiz-json" placeholder="Paste quiz JSON here, or choose a file below…"></textarea>
-          <input type="file" id="quiz-file" accept=".json" style="display:none" onchange="loadQuizFile(this)">
-          <div class="qm-btn-row">
-            <button class="btn btn-outline" style="width:auto" onclick="document.getElementById('quiz-file').click()">Choose File</button>
-            <button class="btn btn-primary" style="flex:1;padding:12px 20px;font-size:15px;" onclick="uploadQuiz()">Upload &amp; Select</button>
+        <div class="qm-list-wrap">
+          <div class="qm-list-toolbar">
+            <input class="qm-input" id="quiz-search" type="text" autocomplete="off"
+                   placeholder="Search by subject, topic or host"
+                   oninput="applyQuizFilter()">
+            <button class="btn btn-outline qm-refresh-btn" id="btn-refresh-list" onclick="loadQuizList()" title="Refresh quiz list">Refresh</button>
           </div>
-          <div class="qm-msg" id="upload-msg"></div>
+          <!-- Progress / status for the list load (fetching, retrying, loaded, failed) -->
+          <div class="qm-load-status" id="list-status" style="display:none;">
+            <div class="qm-progress"><div class="qm-progress-bar" id="list-progress-bar"></div></div>
+            <div class="qm-status-text" id="list-status-text"></div>
+          </div>
+          <div class="qm-quiz-list" id="quiz-list">
+            <div style="color:var(--muted);font-size:13px;padding:8px 4px;">Loading quizzes&hellip;</div>
+          </div>
         </div>
-
-        <!-- Sample format -->
-        <details class="qm-sample">
-          <summary>Sample JSON format</summary>
-          <pre>{
-  "questions": [
-    {
-      "question": "What does the Sharpe Ratio measure?",
-      "options": [
-        "Return per unit of total risk",
-        "Return per unit of market risk",
-        "Portfolio beta",
-        "Maximum drawdown"
-      ],
-      "correct": 0,
-      "time_limit": 20
-    },
-    {
-      "question": "Which Greeks measures sensitivity to volatility?",
-      "options": ["Delta", "Gamma", "Vega", "Theta"],
-      "correct": 2,
-      "time_limit": 15
-    }
-  ]
-}</pre>
-        </details>
+        <div class="sheets-note" id="sheets-note"></div>
 
       </div>
     </div>
 
     <button class="btn btn-primary" id="btn-start" disabled onclick="send({action:'start_game'})">
-      Start Quiz →
+      Start Quiz
     </button>
   </div>
 
@@ -492,86 +899,263 @@
     <div class="q-topbar">
       <div class="q-label">Question <strong id="q-num">1</strong> of <strong id="q-tot">10</strong></div>
       <div class="timer-big" id="t-num">20</div>
-      <button class="btn-outline btn" onclick="send({action:'skip_timer'})">Skip Timer</button>
+      <button class="btn btn-outline" onclick="send({action:'skip_timer'})">Skip Timer</button>
     </div>
     <div class="prog-track"><div class="prog-bar" id="t-bar" style="width:100%"></div></div>
-    <div class="q-center-wrap"><div class="q-text" id="q-text">—</div></div>
+    <div class="q-center-wrap"><div class="q-text" id="q-text">&middot;</div></div>
     <div class="opts-grid">
-      <div class="opt-tile a"><div class="opt-lbl">A</div><span id="o-0">—</span></div>
-      <div class="opt-tile b"><div class="opt-lbl">B</div><span id="o-1">—</span></div>
-      <div class="opt-tile c"><div class="opt-lbl">C</div><span id="o-2">—</span></div>
-      <div class="opt-tile d"><div class="opt-lbl">D</div><span id="o-3">—</span></div>
+      <div class="opt-tile a"><div class="opt-lbl">A</div><span id="o-0">&middot;</span></div>
+      <div class="opt-tile b"><div class="opt-lbl">B</div><span id="o-1">&middot;</span></div>
+      <div class="opt-tile c"><div class="opt-lbl">C</div><span id="o-2">&middot;</span></div>
+      <div class="opt-tile d"><div class="opt-lbl">D</div><span id="o-3">&middot;</span></div>
     </div>
     <div class="ans-row">
       <div>
-        <div class="lbl">Answers received</div>
+        <div class="lbl">Answered</div>
         <div class="ans-count"><span id="a-done">0</span> / <span id="a-tot">0</span></div>
+      </div>
+      <div id="disc-box" style="display:none; text-align:right; max-width:50%;">
+        <div class="lbl" style="color:var(--red-dark);">Disconnected (<span id="disc-count">0</span>)</div>
+        <div id="disc-names" style="font-size:13px; font-weight:600; color:var(--red-dark); line-height:1.45; word-break:break-word;"></div>
       </div>
     </div>
   </div>
 
   <!-- RESULTS -->
   <div id="s-results" class="screen">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px;">
       <div class="results-title" style="margin-bottom:0">Question Results</div>
-      <button class="btn btn-primary" style="width:auto; padding:10px 24px; font-size:15px;" onclick="send({action:'show_leaderboard'})">
-        Show Leaderboard →
+      <button class="btn btn-primary" style="width:auto; padding:11px 22px; font-size:14px;" onclick="send({action:'show_leaderboard'})">
+        Show Leaderboard
       </button>
     </div>
+    <div class="res-q" id="res-question">&middot;</div>
     <div class="correct-box">
-      <div class="lbl">✓ Correct Answer</div>
-      <div class="ans" id="correct-ans">—</div>
+      <div class="lbl">Correct Answer</div>
+      <div class="ans" id="correct-ans">&middot;</div>
     </div>
     <div class="bars" id="bars"></div>
   </div>
 
-  <!-- LEADERBOARD (mid-game) -->
+  <!-- LEADERBOARD (mid-quiz) -->
   <div id="s-leaderboard" class="screen">
-    <div class="lb-title">🏆 Leaderboard</div>
+    <div class="lb-title">Leaderboard</div>
+    <div class="lb-progress" id="lb-progress"></div>
     <div class="lb-list" id="lb"></div>
-    <button class="btn btn-primary" onclick="send({action:'next_question'})">Next Question →</button>
+    <button class="btn btn-primary" onclick="send({action:'next_question'})">Next Question</button>
   </div>
 
-  <!-- GAME OVER — F1 PODIUM -->
+  <!-- FINAL STANDINGS -->
   <div id="s-gameover" class="screen">
     <div class="go-hero">
-      <div class="go-title">🏁 Final Standings</div>
-      <div class="go-sub">Congratulations to all participants!</div>
+      <div class="go-eyebrow">Session complete</div>
+      <div class="go-title">Final Standings</div>
+      <div class="go-sub" id="go-sub">Counting up the scores&hellip;</div>
     </div>
-    <div class="podium-wrap" id="podium"></div>
+    <div class="champ-banner" id="champ-banner">
+      <span class="champ-label">Winner</span><span class="champ-name"></span>
+    </div>
+    <div class="podium-wrap" id="podium">
+      <div class="podium-col p2" id="podium-slot-p2">
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">2</div></div>
+      </div>
+      <div class="podium-col p1" id="podium-slot-p1">
+        <div class="podium-crown"><span>&#127942;</span></div>
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">1</div></div>
+      </div>
+      <div class="podium-col p3" id="podium-slot-p3">
+        <div class="podium-avatar"></div>
+        <div class="podium-name"></div><div class="podium-pts"></div>
+        <div class="podium-block"><div class="podium-rank">3</div></div>
+      </div>
+    </div>
     <div class="rest-list" id="rest-list"></div>
-    <button class="btn btn-ghost" style="max-width:620px;margin:20px auto;display:flex" onclick="send({action:'reset'})">↩ Start New Game</button>
+    <button class="btn btn-primary" id="btn-download-results" style="max-width:620px;margin:22px auto 0;display:flex" onclick="downloadResults()">Download Results</button>
+    <button class="btn btn-ghost" style="max-width:620px;margin:12px auto 20px;display:flex" onclick="confirmReset()">Start a New Session</button>
   </div>
 
 </div>
 
+<script src="/audio.js"></script>
 <script>
   let ws              = null;
   let playerList      = [];
+  let disconnected    = new Set();
+  let allQuizzes      = [];
+  let activeQuizId    = null;
   let timerIv         = null;
   let qStart          = 0;
   let optsRevealTimer = null;
+  let lastQEcho       = { question: '', options: ['', '', '', ''] };
+  let selectedFile    = null;
+  let qTimeLimit      = 0;   // current question's limit, so the music bed knows how urgent to be
+
+  // ── Sound ──────────────────────────────────────────────────────────────────
+  // The host screen is the one projected in the room, so it carries the music.
+  // Defaults to on; the choice is remembered per browser.
+  QuizAudio.setup('host');
+
+  const ICON_SOUND_ON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  const ICON_SOUND_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>';
+
+  function renderSoundBtn() {
+    const btn = document.getElementById('btn-sound');
+    const on = QuizAudio.isEnabled();
+    btn.classList.toggle('off', !on);
+    btn.innerHTML = (on ? ICON_SOUND_ON : ICON_SOUND_OFF) + '<span>' + (on ? 'Sound on' : 'Sound off') + '</span>';
+  }
+
+  function toggleSound() {
+    const on = QuizAudio.toggle();
+    renderSoundBtn();
+    // Turning sound back on mid-lobby should pick the lobby bed straight back up.
+    if (on && mode === 'live' && document.getElementById('s-lobby').classList.contains('active')) {
+      QuizAudio.lobby();
+    }
+  }
+  renderSoundBtn();
+
+  // How much of the current question's clock is left, 1 → 0. The music bed reads
+  // this every beat and doubles its pulse for the closing stretch.
+  function remainingFraction() {
+    if (!qTimeLimit) return 1;
+    return Math.max(0, Math.min(1, (qTimeLimit - (Date.now() - qStart) / 1000) / qTimeLimit));
+  }
 
   document.getElementById('join-url').textContent = location.origin + '/';
+  // Point the join QR at THIS instance's URL so a second deployment hands out
+  // its own code instead of the URL baked into a static PNG.
+  (function () {
+    const qr = document.getElementById('join-qr');
+    if (qr) qr.src = '/qr-code.png?u=' + encodeURIComponent(location.origin + '/');
+  })();
+  renderLLMPrompt();  // show the AI prompt (with placeholders) on first load
 
-  // Auto-connect if token is cached from a previous session
-  const _cached = sessionStorage.getItem('hostToken');
-  if (_cached) {
-    document.getElementById('login-overlay').style.display = 'none';
-    connectWS(_cached);
-  } else {
-    showLogin();
-  }
+  let mode = sessionStorage.getItem('hostMode') || 'manager';
+  let hostCount = 1;
+  let hostNames = [];
 
   function showLogin() {
     document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('mode-switch').style.display = 'none';
+    document.getElementById('btn-logout').style.display = 'none';
+    document.getElementById('host-badge').style.display = 'none';
+  }
+
+  // Called once a token is available (fresh login or cached session).
+  function enterApp() {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('mode-switch').style.display = 'inline-flex';
+    document.getElementById('btn-logout').style.display = 'inline-block';
+    applyMode();
+  }
+
+  // End the session: close the game socket, clear the cached credentials, and
+  // return to the login screen.
+  function doLogout() {
+    if (!confirm('Log out of the Host Panel?')) return;
+    QuizAudio.allOff();
+    closeWS();
+    sessionStorage.removeItem('hostToken');
+    sessionStorage.removeItem('hostName');
+    sessionStorage.removeItem('hostMode');
+    mode = 'manager';  // next login starts on Manage Quizzes
+    document.body.classList.remove('mode-manager');
+    showLogin();
+  }
+
+  function setMode(m) {
+    // Guard the jump into live hosting: it connects to the shared session and its
+    // controls act on any quiz already in progress, so confirm intent first.
+    if (m === 'live' && mode !== 'live') {
+      const ok = confirm(
+        'Switch to Host a Quiz?\n\n' +
+        'This connects you to the shared live session. Your controls (start, next, ' +
+        'skip, reset) will affect any quiz already in progress. Only continue if ' +
+        'you intend to run the live session.'
+      );
+      if (!ok) return;
+    }
+    mode = m;
+    sessionStorage.setItem('hostMode', m);
+    applyMode();
+  }
+
+  // Host a Quiz mode opens the game control WebSocket and shows the live session.
+  // Manage Quizzes mode never opens that socket, so it physically cannot start,
+  // stop, skip, or reset a running quiz; it only manages quizzes over HTTP.
+  function applyMode() {
+    const token = sessionStorage.getItem('hostToken');
+    const name  = sessionStorage.getItem('hostName');
+    if (!token || !name) { showLogin(); return; }
+    document.getElementById('mode-live').classList.toggle('active', mode === 'live');
+    document.getElementById('mode-manager').classList.toggle('active', mode === 'manager');
+    if (mode === 'manager') {
+      document.body.classList.add('mode-manager');
+      closeWS();
+      QuizAudio.stopMusic();   // Manage Quizzes is a silent, admin-only screen
+      hideMultihost();
+      document.getElementById('reconnect-banner').classList.remove('show');
+      show('lobby');
+      switchTab('upload');
+      loadQuizList();
+    } else {
+      document.body.classList.remove('mode-manager');
+      switchTab('players');
+      if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+        connectWS(token, name);
+      }
+      updateMultihost();
+      // Refresh the list so its per-row actions match this mode (Select vs Delete/Preview).
+      loadQuizList();
+    }
+  }
+
+  function closeWS() {
+    clearTimeout(reconnectTimer);
+    if (ws) {
+      try { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; ws.close(); } catch (e) {}
+      ws = null;
+    }
+    setConn(false);
+  }
+
+  function updateMultihost(count, hosts) {
+    if (typeof count === 'number') hostCount = count;
+    if (Array.isArray(hosts)) hostNames = hosts;
+    const shouldShow = (mode === 'live') && hostCount > 1;
+    document.getElementById('multihost-banner').classList.toggle('show', shouldShow);
+    if (!shouldShow) return;
+    // List the OTHER connected hosts by name, dropping one instance of our own.
+    const me = (sessionStorage.getItem('hostName') || '').trim();
+    const others = [];
+    let skippedSelf = false;
+    for (const n of hostNames) {
+      if (!skippedSelf && n === me) { skippedSelf = true; continue; }
+      others.push(n);
+    }
+    let who;
+    if (others.length === 1)      who = `${others[0]} is also connected to this session.`;
+    else if (others.length > 1)   who = `${others.slice(0, -1).join(', ')} and ${others[others.length - 1]} are also connected to this session.`;
+    else                          who = 'Another host is also connected to this session.';
+    document.getElementById('multihost-text').textContent =
+      `${who} Your controls affect the same live quiz. If you only want to add or edit quizzes, switch to Manage Quizzes.`;
+  }
+  function hideMultihost() {
+    document.getElementById('multihost-banner').classList.remove('show');
   }
 
   async function doLogin() {
+    const hostName = document.getElementById('login-name').value.trim();
     const user  = document.getElementById('login-user').value.trim();
     const pass  = document.getElementById('login-pass').value;
     const errEl = document.getElementById('login-err');
     errEl.textContent = '';
+    if (!hostName) { errEl.textContent = 'Please enter your name.'; return; }
     if (!user || !pass) { errEl.textContent = 'Enter username and password.'; return; }
     try {
       const res  = await fetch('/api/host-login', {
@@ -582,25 +1166,65 @@
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Login failed.'; return; }
       sessionStorage.setItem('hostToken', data.token);
-      document.getElementById('login-overlay').style.display = 'none';
-      connectWS(data.token);
+      sessionStorage.setItem('hostName', hostName);
+      enterApp();
     } catch (e) {
-      errEl.textContent = 'Login failed: ' + e.message;
+      errEl.textContent = 'Login failed. Please check your connection and try again.';
     }
   }
 
-  function connectWS(token) {
+  let reconnectTimer = null;
+
+  function connectWS(token, hostName) {
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${proto}//${location.host}/ws/host?token=${token}`);
-    ws.onopen    = () => { setConn(true); loadQuizList(); };
-    ws.onclose   = (e) => {
+    // Tear down any previous socket first, otherwise its handlers keep running in
+    // parallel with the new one (duplicate message processing, reconnect flapping)
+    // when a scheduled reconnect and a manual "Reconnect Now" overlap.
+    if (ws) {
+      try { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; ws.close(); } catch (e) {}
+    }
+    const sock = new WebSocket(`${proto}//${location.host}/ws/host?token=${token}&host=${encodeURIComponent(hostName)}`);
+    ws = sock;
+    sock.onopen    = () => {
+      if (ws !== sock) { try { sock.close(); } catch (e) {} return; }
+      setConn(true);
+      document.getElementById('reconnect-banner').classList.remove('show');
+      clearTimeout(reconnectTimer);
+      loadQuizList();
+    };
+    sock.onclose   = (e) => {
+      if (ws !== sock) return;
       setConn(false);
       if (e.code === 1008) {
         sessionStorage.removeItem('hostToken');
+        sessionStorage.removeItem('hostName');
         showLogin();
+        return;
       }
+      document.getElementById('reconnect-banner').classList.add('show');
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => connectWS(token, hostName), 3000);
     };
-    ws.onmessage = e => handle(JSON.parse(e.data));
+    sock.onmessage = e => {
+      if (ws !== sock) return;
+      let msg;
+      try { msg = JSON.parse(e.data); } catch (err) { return; }
+      handle(msg);
+    };
+    sock.onerror   = () => {};
+    if (hostName) {
+      document.getElementById('host-name-label').textContent = hostName;
+      document.getElementById('host-badge').style.display = 'block';
+    }
+  }
+
+  function manualReconnect() {
+    const token = sessionStorage.getItem('hostToken');
+    const hostName = sessionStorage.getItem('hostName');
+    if (!token || !hostName) { showLogin(); return; }
+    if (mode !== 'live') { applyMode(); return; }
+    clearTimeout(reconnectTimer);
+    connectWS(token, hostName);
   }
 
   function setConn(ok) {
@@ -608,13 +1232,19 @@
     document.getElementById('conn-label').textContent = ok ? 'Connected' : 'Disconnected';
   }
 
-  function send(obj) { if (ws) ws.send(JSON.stringify(obj)); }
+  function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Keepalive: some hosting proxies silently drop WebSocket connections that go
+  // quiet for too long (no error, no close event, just stop delivering messages).
+  // A small heartbeat keeps real traffic flowing so that never happens.
+  setInterval(() => send({ action: 'ping' }), 20000);
 
   function copyJoinUrl() {
     const url = location.origin + '/';
     navigator.clipboard.writeText(url).then(() => {
       const btn = document.getElementById('copy-btn');
-      btn.textContent = 'Copied!';
+      btn.textContent = 'Copied';
       btn.classList.add('copied');
       setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
     });
@@ -623,23 +1253,42 @@
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`s-${id}`).classList.add('active');
+    const pill = document.getElementById('quiz-pill');
+    pill.style.display = ['question', 'results', 'leaderboard', 'gameover'].includes(id) ? 'flex' : 'none';
+  }
+
+  function setQuizPill(subject, topic, progress) {
+    if (subject !== undefined) {
+      const label = quizLabel({ subject, topic });
+      document.getElementById('quiz-pill-text').textContent = (subject || topic) ? label : '·';
+    }
+    document.getElementById('quiz-pill-progress').textContent = progress ? `· Question ${progress.current} of ${progress.total}` : '';
   }
 
   function handle(msg) {
+    if (msg.subject !== undefined) setQuizPill(msg.subject, msg.topic);
     switch (msg.type) {
       case 'player_joined':
         addChip(msg.name);
+        disconnected.delete(msg.name);
+        renderDisc();
         document.getElementById('p-count').textContent = msg.count;
         document.getElementById('p-count-bar').style.display = 'flex';
         document.getElementById('btn-start').disabled = msg.count < 1;
         break;
       case 'player_left':
         removeChip(msg.name);
+        disconnected.delete(msg.name);
+        renderDisc();
         break;
       case 'player_disconnected':
         dimChip(msg.name);
+        disconnected.add(msg.name);
+        renderDisc();
         break;
       case 'countdown':
+        QuizAudio.stopMusic();
+        QuizAudio.countdown(msg.value);
         showCountdown(msg.value);
         break;
       case 'question_start':
@@ -651,14 +1300,16 @@
         document.getElementById('a-tot').textContent  = msg.total;
         break;
       case 'results':        showResults(msg); break;
-      case 'leaderboard':    showLB(msg.leaderboard); break;
+      case 'leaderboard':    showLB(msg.leaderboard, { current: msg.current, total: msg.total }); break;
       case 'game_over':      showPodium(msg.leaderboard); break;
-      case 'reset':          location.reload(); break;
+      case 'reset':          QuizAudio.allOff(); location.reload(); break;
       case 'force_stopped':
         clearInterval(timerIv);
         clearTimeout(optsRevealTimer);
+        QuizAudio.stopMusic();
         hideCountdown();
         show('lobby');
+        if (mode === 'live') QuizAudio.lobby();
         document.getElementById('a-done').textContent = '0';
         document.getElementById('a-tot').textContent  = msg.connected_count ?? playerList.length;
         document.getElementById('p-count').textContent = msg.connected_count ?? playerList.length;
@@ -666,12 +1317,20 @@
         toggleForceStop(false);
         break;
       case 'quiz_selected':  loadQuizList(); break;
+      case 'host_presence':
+        updateMultihost(msg.host_count, msg.hosts);
+        break;
       case 'connected':
         clearInterval(timerIv);
         clearTimeout(optsRevealTimer);
         hideCountdown();
+        updateMultihost(msg.host_count, msg.hosts);
         syncTimeLimitUI(msg.global_time_limit);
         setPlayersFromState(msg.players || [], msg.connected_players || []);
+        if (msg.host) {
+          document.getElementById('host-name-label').textContent = msg.host;
+          document.getElementById('host-badge').style.display = 'block';
+        }
         hydrateFromConnected(msg);
         break;
       case 'time_limit_set': syncTimeLimitUI(msg.global_time_limit); break;
@@ -694,6 +1353,27 @@
     send({ action: 'set_time_limit', time_limit: val ? parseInt(val) : null });
   }
 
+  function createChip(name, connected) {
+    const c = document.createElement('div');
+    c.className = 'p-chip' + (connected ? '' : ' disconnected');
+    c.id = `pc-${name}`;
+    const label = document.createElement('span');
+    label.textContent = name;
+    c.appendChild(label);
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'p-chip-remove';
+    removeBtn.textContent = '✕';
+    removeBtn.title = `Remove ${name}`;
+    removeBtn.addEventListener('click', (e) => { e.stopPropagation(); removePlayer(name); });
+    c.appendChild(removeBtn);
+    return c;
+  }
+
+  function removePlayer(name) {
+    if (!confirm(`Remove ${name} from this quiz?`)) return;
+    send({ action: 'remove_player', name });
+  }
+
   function setPlayersFromState(players, connectedPlayers) {
     const grid = document.getElementById('p-grid');
     const connectedSet = new Set((connectedPlayers || []).map(String));
@@ -703,16 +1383,17 @@
     players.forEach(p => {
       if (!p || !p.name) return;
       playerList.push(p.name);
-      const c = document.createElement('div');
-      c.className = 'p-chip' + (connectedSet.has(p.name) ? '' : ' disconnected');
-      c.id = `pc-${p.name}`;
-      c.textContent = p.name;
-      grid.appendChild(c);
+      grid.appendChild(createChip(p.name, connectedSet.has(p.name)));
     });
 
     if (!playerList.length) {
-      grid.innerHTML = '<div class="empty-hint" id="p-empty">Waiting for players to join…</div>';
+      grid.innerHTML = '<div class="empty-hint" id="p-empty">Waiting for participants to join…</div>';
     }
+
+    // Rebuild the disconnected set from the authoritative connected list so the
+    // indicator is correct after a host reconnect / hydrate.
+    disconnected = new Set(playerList.filter(n => !connectedSet.has(n)));
+    renderDisc();
   }
 
   function hydrateFromConnected(msg) {
@@ -734,7 +1415,7 @@
     }
 
     if (phase === 'leaderboard' && msg.leaderboard) {
-      showLB(msg.leaderboard);
+      showLB(msg.leaderboard, { current: msg.current, total: msg.total });
       return;
     }
 
@@ -746,6 +1427,8 @@
     show('lobby');
     toggleForceStop(phase !== 'waiting');
     document.getElementById('btn-start').disabled = phase !== 'waiting' || connectedCount < 1;
+    // Only the live host screen gets the lobby bed; Manage Quizzes stays silent.
+    if (mode === 'live' && phase === 'waiting') QuizAudio.lobby();
   }
 
   function addChip(name) {
@@ -754,9 +1437,7 @@
     playerList.push(name);
     const empty = document.getElementById('p-empty');
     if (empty) empty.remove();
-    const c = document.createElement('div');
-    c.className = 'p-chip'; c.id = `pc-${name}`; c.textContent = name;
-    document.getElementById('p-grid').appendChild(c);
+    document.getElementById('p-grid').appendChild(createChip(name, true));
   }
 
   function dimChip(name) {
@@ -764,10 +1445,27 @@
     if (el) el.classList.add('disconnected');
   }
 
+  // Show which named participants have dropped, on the live question screen, so
+  // the host can prompt them to rejoin instead of only seeing the count fall.
+  function renderDisc() {
+    const box = document.getElementById('disc-box');
+    if (!box) return;
+    const names = [...disconnected].filter(n => playerList.includes(n));
+    document.getElementById('disc-count').textContent = names.length;
+    document.getElementById('disc-names').textContent = names.join(', ');
+    box.style.display = names.length ? 'block' : 'none';
+  }
+
   function removeChip(name) {
     playerList = playerList.filter(n => n !== name);
     const el = document.getElementById(`pc-${name}`);
     if (el) el.remove();
+    const grid = document.getElementById('p-grid');
+    if (!playerList.length && !document.getElementById('p-empty')) {
+      grid.innerHTML = '<div class="empty-hint" id="p-empty">Waiting for participants to join…</div>';
+    }
+    document.getElementById('p-count').textContent = playerList.length;
+    document.getElementById('btn-start').disabled = playerList.length < 1;
   }
 
   function showCountdown(n) {
@@ -788,28 +1486,35 @@
 
   function showQuestion(msg) {
     show('question');
+    setQuizPill(msg.subject, msg.topic);
     toggleForceStop(true);
     document.getElementById('q-num').textContent = msg.index + 1;
     document.getElementById('q-tot').textContent = msg.total;
     document.getElementById('q-text').textContent = msg.question;
     ['a','b','c','d'].forEach((_, i) => { document.getElementById(`o-${i}`).textContent = msg.options[i]; });
+    lastQEcho = { question: msg.question, options: msg.options };
     document.getElementById('a-done').textContent = '0';
     document.getElementById('a-tot').textContent  = playerList.length;
 
-    // Hide options initially, reveal after 5 seconds (matches player screen)
+    // Hide options initially, reveal after 5 seconds (matches participant screen)
     const optsGrid = document.querySelector('.opts-grid');
     optsGrid.classList.remove('revealed');
     clearTimeout(optsRevealTimer);
     const elapsed = msg.elapsed || 0;
     const revealDelay = Math.max(0, 5000 - elapsed * 1000);
+    const reveal = () => { optsGrid.classList.add('revealed'); QuizAudio.optionsReveal(); };
     if (revealDelay === 0) {
-      optsGrid.classList.add('revealed');
+      reveal();
     } else {
-      optsRevealTimer = setTimeout(() => optsGrid.classList.add('revealed'), revealDelay);
+      optsRevealTimer = setTimeout(reveal, revealDelay);
     }
 
     qStart = Date.now() - elapsed * 1000;
+    qTimeLimit = msg.time_limit;
     runTimer(msg.time_limit);
+    // "Go" chord, then the pulse bed under the question.
+    QuizAudio.go();
+    QuizAudio.question(remainingFraction);
   }
 
   function runTimer(s) {
@@ -822,43 +1527,77 @@
       num.textContent = Math.ceil(rem);
       bar.style.width  = (rem / s * 100) + '%';
       if (rem <= 5)       { num.className = 'timer-big danger'; bar.style.background = 'var(--red)'; }
-      else if (rem <= 10) { num.className = 'timer-big warn';   bar.style.background = 'var(--gold)'; }
+      else if (rem <= 10) { num.className = 'timer-big warn';   bar.style.background = 'var(--yellow)'; }
       if (rem <= 0) clearInterval(timerIv);
     }, 100);
   }
 
+  // Each option keeps its own colour in the bar chart; the correct one is marked
+  // with a green ring and a tick rather than by recolouring, so the mapping from
+  // colour to option letter never changes mid-quiz.
+  const OPT_COLORS = ['var(--navy)', 'var(--navy-mid)', 'var(--yellow)', 'var(--green)'];
+
   function showResults(msg) {
     clearInterval(timerIv);
+    QuizAudio.stopMusic();
+    QuizAudio.revealAnswer();
     show('results');
+    setQuizPill(msg.subject, msg.topic);
     toggleForceStop(true);
     const opts = ['A','B','C','D'];
+    // Echo the question and each option so the host can discuss the answers
+    // without switching back to the question screen. Fall back to what the
+    // question screen showed if the server didn't send them.
+    const qText   = msg.question !== undefined ? msg.question : lastQEcho.question;
+    const optText = msg.options  !== undefined ? msg.options  : lastQEcho.options;
+    document.getElementById('res-question').textContent = qText || '·';
     document.getElementById('correct-ans').textContent = `${opts[msg.correct]}: ${msg.correct_text}`;
     const total = msg.answer_counts.reduce((a,b)=>a+b,0);
     const barsEl = document.getElementById('bars');
     barsEl.innerHTML = '';
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     msg.answer_counts.forEach((cnt, i) => {
       const pct   = total > 0 ? (cnt / total * 100) : 0;
       const ok    = i === msg.correct;
-      const color = ok ? 'var(--green)' : '#2d3f6e';
+      const color = OPT_COLORS[i];
+      const txtColor = i === 2 ? 'var(--navy-dark)' : '#fff';
       const row   = document.createElement('div');
       row.className = 'bar-row' + (ok ? ' is-correct' : '');
       row.innerHTML = `
-        <div class="bar-lbl" style="background:${color};color:${ok ? '#fff' : 'var(--muted)'}">${opts[i]}</div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}"></div>
+        <div class="bar-lbl" style="background:${color};color:${txtColor}">${opts[i]}</div>
+        <div class="bar-main">
+          <div class="bar-opt">${esc(optText && optText[i])}${ok ? ' ✓' : ''}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}"></div>
+          </div>
         </div>
         <div class="bar-cnt">${cnt}</div>`;
       barsEl.appendChild(row);
     });
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      barsEl.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
-    }));
+    growBars(barsEl);
   }
 
-  function showLB(lb) {
+  // Grow the bars from 0 to their final width. requestAnimationFrame alone is not
+  // enough: it is paused while the tab is hidden and does not fire at all in some
+  // headless/embedded contexts, which would leave every bar stuck at 0% — a wrong
+  // chart, not just a missing animation. The timer is an idempotent backstop.
+  function growBars(barsEl) {
+    const apply = () => barsEl.querySelectorAll('.bar-fill').forEach(el => {
+      if (el.style.width !== el.dataset.pct + '%') el.style.width = el.dataset.pct + '%';
+    });
+    requestAnimationFrame(() => requestAnimationFrame(apply));
+    setTimeout(apply, 120);
+  }
+
+  function showLB(lb, progress) {
+    QuizAudio.stopMusic();
+    QuizAudio.leaderboard();
     show('leaderboard');
+    setQuizPill(undefined, undefined, progress);
     toggleForceStop(true);
-    const medals = ['🥇','🥈','🥉'];
+    document.getElementById('lb-progress').textContent =
+      progress && progress.total ? `Question ${progress.current} of ${progress.total} completed` : '';
     const el = document.getElementById('lb');
     el.innerHTML = '';
     lb.forEach((p, i) => {
@@ -866,162 +1605,690 @@
       row.className = 'lb-row'; row.style.animationDelay = (i * .06) + 's';
       const rC = i < 3 ? ` r${i+1}` : '';
       row.innerHTML = `
-        <div class="lb-rank${rC}">${i < 3 ? medals[i] : i+1}</div>
-        <div class="lb-name">${p.name}</div>
-        <div class="lb-score">${p.score.toLocaleString()}</div>`;
+        <div class="lb-rank${rC}">${i+1}</div>
+        <div class="lb-avatar" style="background:${avatarColor(p.name)}">${escHtml((p.name || '?').trim().charAt(0).toUpperCase())}</div>
+        <div class="lb-name">${escHtml(p.name)}</div>
+        <div class="lb-score">${Number(p.score || 0).toLocaleString()}</div>`;
       el.appendChild(row);
     });
   }
 
-  // ── Quiz Manager ────────────────────────────────────────────────────────────
+  // ── Confetti & fireworks, in QI brand colours ───────────────────────────────
+
+  const BRAND_COLORS = ['#173871', '#2e77c9', '#ffdc57', '#1b7f4d', '#0f2650'];
+
+  function burstConfetti(count) {
+    const layer = document.getElementById('confetti-layer');
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.background = BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
+      p.style.animationDelay = (Math.random() * 0.4) + 's';
+      p.style.animationDuration = (2 + Math.random() * 1.4) + 's';
+      p.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+      p.style.setProperty('--drift', (Math.random() * 160 - 80) + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 4000);
+    }
+  }
+
+  function fireworkBurst(x, y, color) {
+    const layer = document.getElementById('confetti-layer');
+    const n = 18;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement('div');
+      p.className = 'firework-spark';
+      const angle = (Math.PI * 2 * i) / n;
+      const dist = 55 + Math.random() * 45;
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.background = color;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+  }
+
+  // ── Quiz manager ────────────────────────────────────────────────────────────
 
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === name));
   }
 
-  async function loadQuizList() {
-    try {
-      const res  = await fetch('/api/quizzes');
-      const data = await res.json();
-      renderQuizList(data.quizzes, data.active);
-    } catch (e) {
-      document.getElementById('quiz-list').innerHTML =
-        `<div style="color:var(--red);font-size:13px;">Failed to load quizzes</div>`;
+  function authHeaders() {
+    const token = sessionStorage.getItem('hostToken') || '';
+    return { 'Authorization': 'Bearer ' + token };
+  }
+
+  // Each call bumps the generation; only the newest call is allowed to render, so
+  // overlapping triggers (mode switch + socket-open + manual refresh) never fight
+  // each other or leave the list stuck.
+  let quizLoadGen = 0;
+  const QUIZ_FETCH_TIMEOUT = 20000;   // per attempt
+  const QUIZ_FETCH_ATTEMPTS = 3;      // total tries, to ride out a cold server start
+
+  function setListStatus(state, text) {
+    const wrap = document.getElementById('list-status');
+    const bar  = document.getElementById('list-progress-bar');
+    const txt  = document.getElementById('list-status-text');
+    if (!wrap) return;
+    if (state === 'hide') { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    bar.className = 'qm-progress-bar' + (state === 'loading' ? ' indet' : state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+    txt.className = 'qm-status-text' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+    txt.textContent = text;
+  }
+
+  function setRefreshBusy(busy) {
+    const btn = document.getElementById('btn-refresh-list');
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.textContent = busy ? 'Refreshing…' : 'Refresh';
+  }
+
+  function setSheetsNote(connected) {
+    const el = document.getElementById('sheets-note');
+    if (!el) return;
+    if (connected) {
+      el.className = 'sheets-note';
+      el.textContent = 'Google Sheets connected. Uploaded quizzes and results are being saved.';
+    } else {
+      el.className = 'sheets-note warn';
+      el.textContent = 'Google Sheets is not connected. The quiz runs normally, but uploaded quizzes and results are only kept in memory until the server restarts.';
     }
   }
 
-  function renderQuizList(quizList, active) {
-    document.getElementById('active-quiz-name').textContent = active;
-    const activeQ = quizList.find(q => q.name === active);
-    document.getElementById('active-quiz-count').textContent =
-      activeQ ? `— ${activeQ.count} questions` : '';
+  async function loadQuizList() {
+    const gen = ++quizLoadGen;
+    setRefreshBusy(true);
+    document.getElementById('quiz-list').innerHTML =
+      '<div class="qm-list-empty">Loading quizzes…</div>';
 
+    let lastErr = null;
+    for (let attempt = 1; attempt <= QUIZ_FETCH_ATTEMPTS; attempt++) {
+      if (gen !== quizLoadGen) return;  // a newer refresh superseded this run
+      const controller = new AbortController();
+      const timeout = setTimeout(() => { try { controller.abort(); } catch (e) {} }, QUIZ_FETCH_TIMEOUT);
+      try {
+        setListStatus('loading', attempt === 1 ? 'Fetching quizzes…'
+                                              : `Server may be waking up — retrying (${attempt}/${QUIZ_FETCH_ATTEMPTS})…`);
+        const res = await fetch('/api/quizzes', { headers: authHeaders(), signal: controller.signal });
+        clearTimeout(timeout);
+        if (gen !== quizLoadGen) return;
+        if (res.status === 401) {  // token expired/invalid — no amount of retrying fixes this
+          setListStatus('err', 'Your session has expired. Please log in again.');
+          renderListState('Your session has expired. Please log in again.', false);
+          setRefreshBusy(false);
+          return;
+        }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (gen !== quizLoadGen) return;
+        allQuizzes   = data.quizzes || [];
+        activeQuizId = data.active;
+        setSheetsNote(!!data.sheets_connected);
+        updateActiveQuizBanner(allQuizzes.find(q => q.id === activeQuizId));
+        applyQuizFilter();
+        const n = allQuizzes.length;
+        setListStatus('ok', `Loaded ${n} quiz${n === 1 ? '' : 'zes'}.`);
+        setRefreshBusy(false);
+        setTimeout(() => { if (gen === quizLoadGen) setListStatus('hide'); }, 2500);
+        return;
+      } catch (e) {
+        clearTimeout(timeout);
+        lastErr = e;
+        if (gen !== quizLoadGen) return;
+        if (attempt < QUIZ_FETCH_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 1500));  // brief pause before the next try
+        }
+      }
+    }
+
+    // All attempts failed.
+    if (gen !== quizLoadGen) return;
+    const timedOut = lastErr && lastErr.name === 'AbortError';
+    const msg = timedOut
+      ? 'The server took too long to respond (it may be waking up). Tap Refresh to try again.'
+      : "Couldn't load the quiz list. Check your connection and tap Refresh.";
+    setListStatus('err', "Couldn't load the quiz list.");
+    renderListState(msg, true);
+    setRefreshBusy(false);
+  }
+
+  // Render an empty/error state in the quiz list, optionally with a Refresh button.
+  function renderListState(message, showRefresh) {
     const el = document.getElementById('quiz-list');
     el.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'qm-list-empty';
+    const msg = document.createElement('div');
+    msg.textContent = message;
+    box.appendChild(msg);
+    if (showRefresh) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline';
+      btn.textContent = 'Refresh';
+      btn.addEventListener('click', loadQuizList);
+      box.appendChild(btn);
+    }
+    el.appendChild(box);
+  }
+
+  // Filter the already-loaded quizzes by the search box; no re-fetch needed.
+  function applyQuizFilter() {
+    const searchEl = document.getElementById('quiz-search');
+    const term = (searchEl ? searchEl.value : '').trim().toLowerCase();
+    let list = allQuizzes;
+    if (term) {
+      list = allQuizzes.filter(q => {
+        const hay = [q.subject || '', q.topic || '', q.uploaded_by || '', '#' + q.id].join(' ').toLowerCase();
+        return hay.includes(term);
+      });
+    }
+    renderQuizList(list, activeQuizId);
+  }
+
+  function quizLabel(q) {
+    return [q.subject || 'General', q.topic || 'General'].join(' · ');
+  }
+
+  function updateActiveQuizBanner(activeQ) {
+    const subjEl = document.getElementById('aqb-subject');
+    const cntEl  = document.getElementById('aqb-count');
+    if (!activeQ) { subjEl.textContent = '·'; cntEl.textContent = ''; return; }
+    subjEl.textContent = quizLabel(activeQ);
+    cntEl.textContent = `(${activeQ.count} question${activeQ.count === 1 ? '' : 's'})`;
+  }
+
+  function renderQuizList(quizList, active) {
+    const el = document.getElementById('quiz-list');
+    el.innerHTML = '';
+    if (!quizList.length) {
+      const term = (document.getElementById('quiz-search')?.value || '').trim();
+      if (term) {
+        renderListState('No quizzes match your search.', false);
+      } else {
+        // Zero quizzes loaded — often a transient load hiccup, so offer a refresh.
+        renderListState('No quizzes to show yet.', true);
+      }
+      return;
+    }
     quizList.forEach(q => {
       const row = document.createElement('div');
-      row.className = 'qm-quiz-row' + (q.name === active ? ' is-active' : '');
+      row.className = 'qm-quiz-row' + (q.id === active ? ' is-active' : '');
+
+      const idEl = document.createElement('div');
+      idEl.className = 'qm-quiz-id';
+      idEl.textContent = `#${q.id}`;
 
       const nameEl = document.createElement('div');
       nameEl.className = 'qm-quiz-name';
-      nameEl.textContent = q.name;
+      const subjectEl = document.createElement('span');
+      subjectEl.className = 'qm-quiz-subject';
+      subjectEl.textContent = quizLabel(q);
+      nameEl.appendChild(subjectEl);
+      const metaBits = [];
+      if (q.uploaded_by) metaBits.push(`by ${q.uploaded_by}`);
+      if (q.uploaded_at) metaBits.push(q.uploaded_at);
+      if (metaBits.length) {
+        const meta = document.createElement('div');
+        meta.className = 'qm-quiz-meta';
+        meta.textContent = metaBits.join(' · ');
+        nameEl.appendChild(meta);
+      }
 
       const countEl = document.createElement('div');
       countEl.className = 'qm-quiz-count';
       countEl.textContent = `${q.count} questions`;
 
+      row.appendChild(idEl);
       row.appendChild(nameEl);
       row.appendChild(countEl);
 
-      if (q.name === active) {
+      // Preview (view the questions and answers) is a Manage Quizzes action,
+      // available for every quiz including the active and the built-in default.
+      if (mode === 'manager') {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-outline';
+        prevBtn.style.cssText = 'width:auto;padding:6px 14px;font-size:12px;';
+        prevBtn.textContent = 'Preview';
+        prevBtn.addEventListener('click', () => previewQuiz(q.id));
+        row.appendChild(prevBtn);
+      }
+
+      // Full separation of the two modes:
+      //  • Host a Quiz    → only "Select" (pick which quiz to run).
+      //  • Manage Quizzes → only "Delete" (curate the library).
+      // The active quiz shows an "Active" badge instead of a mode action.
+      if (q.id === active) {
         const badge = document.createElement('div');
         badge.className = 'qm-badge';
         badge.textContent = 'Active';
         row.appendChild(badge);
-      } else {
+      } else if (mode === 'live') {
         const btn = document.createElement('button');
         btn.className = 'btn btn-outline';
-        btn.style.cssText = 'width:auto;padding:5px 16px;font-size:12px;';
+        btn.style.cssText = 'width:auto;padding:6px 14px;font-size:12px;';
         btn.textContent = 'Select';
-        btn.addEventListener('click', () => send({ action: 'select_quiz', name: q.name }));
+        btn.addEventListener('click', () => selectQuiz(q.id));
         row.appendChild(btn);
+      } else if (q.id !== 0) {
+        // Manage mode: delete is available for every quiz except the built-in default.
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-danger';
+        delBtn.style.cssText = 'width:auto;padding:6px 13px;font-size:12px;';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => deleteQuiz(q.id, quizLabel(q)));
+        row.appendChild(delBtn);
       }
       el.appendChild(row);
     });
   }
 
-  function loadQuizFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('quiz-json').value = e.target.result;
-      const nameInput = document.getElementById('quiz-name-input');
-      if (!nameInput.value.trim()) {
-        nameInput.value = file.name.replace(/\.json$/i, '');
-      }
-    };
-    reader.readAsText(file);
-  }
+  // ── Quiz preview ─────────────────────────────────────────────────────────────
 
-  async function uploadQuiz() {
-    const nameInput = document.getElementById('quiz-name-input');
-    const jsonInput = document.getElementById('quiz-json');
-    const msgEl     = document.getElementById('upload-msg');
-    msgEl.className = 'qm-msg'; msgEl.textContent = '';
-
-    const name = nameInput.value.trim();
-    if (!name) { msgEl.textContent = 'Please enter a quiz name.'; msgEl.classList.add('err'); return; }
-
-    let parsed;
-    try { parsed = JSON.parse(jsonInput.value.trim()); }
-    catch { msgEl.textContent = 'Invalid JSON — check for syntax errors.'; msgEl.classList.add('err'); return; }
-
+  async function previewQuiz(id) {
+    const overlay = document.getElementById('preview-overlay');
+    const body    = document.getElementById('preview-body');
+    const titleEl = document.getElementById('preview-title');
+    const subEl   = document.getElementById('preview-sub');
+    titleEl.textContent = 'Loading preview…';
+    subEl.textContent = '';
+    body.innerHTML = '';
+    overlay.style.display = 'flex';
     try {
-      const res    = await fetch('/api/quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, questions: parsed.questions ?? parsed }),
-      });
-      const result = await res.json();
-      if (!res.ok) { msgEl.textContent = result.error || 'Upload failed.'; msgEl.classList.add('err'); return; }
-      msgEl.textContent = `Uploaded "${name}" (${result.count} questions) — selecting now…`;
-      msgEl.classList.add('ok');
-      nameInput.value = ''; jsonInput.value = '';
-      send({ action: 'select_quiz', name });
+      const res = await fetch(`/api/quiz/${id}`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('load failed');
+      const q = await res.json();
+      renderPreview(q);
     } catch (e) {
-      msgEl.textContent = 'Upload failed: ' + e.message; msgEl.classList.add('err');
+      titleEl.textContent = 'Preview unavailable';
+      body.innerHTML = '<div class="qm-list-empty">Couldn\'t load this quiz. Please try again.</div>';
     }
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
+  function renderPreview(q) {
+    document.getElementById('preview-title').textContent = quizLabel(q);
+    const questions = q.questions || [];
+    const metaBits = [`${questions.length} question${questions.length === 1 ? '' : 's'}`];
+    if (q.uploaded_by) metaBits.push(`by ${q.uploaded_by}`);
+    if (q.uploaded_at) metaBits.push(q.uploaded_at);
+    document.getElementById('preview-sub').textContent = metaBits.join(' · ');
 
-  function showPodium(lb) {
-    show('gameover');
-    toggleForceStop(true);
-    const podiumEl = document.getElementById('podium');
-    const restEl   = document.getElementById('rest-list');
-    podiumEl.innerHTML = ''; restEl.innerHTML = '';
+    const body = document.getElementById('preview-body');
+    body.innerHTML = '';
+    questions.forEach((qq, i) => {
+      const card = document.createElement('div');
+      card.className = 'pv-q';
 
-    // F1 podium order: 2nd (left), 1st (center), 3rd (right)
-    const order = [
-      { idx: 1, cls: 'p2', medal: '🥈' },
-      { idx: 0, cls: 'p1', medal: '🏆' },
-      { idx: 2, cls: 'p3', medal: '🥉' },
-    ];
+      const num = document.createElement('div');
+      num.className = 'pv-q-num';
+      num.textContent = `Question ${i + 1}`;
+      card.appendChild(num);
 
-    order.forEach(({ idx, cls, medal }) => {
-      const p = lb[idx];
-      if (!p) return;
-      const col = document.createElement('div');
-      col.className = `podium-col ${cls}`;
-      col.innerHTML = `
-        <div class="podium-name">${p.name}</div>
-        <div class="podium-pts">${p.score.toLocaleString()} pts</div>
-        <div class="podium-block">
-          <div class="podium-medal">${medal}</div>
-          <div class="podium-rank">${idx + 1}</div>
-        </div>`;
-      podiumEl.appendChild(col);
+      if (qq.concept) {
+        const concept = document.createElement('div');
+        concept.className = 'pv-q-concept';
+        concept.textContent = qq.concept;
+        card.appendChild(concept);
+      }
+
+      const text = document.createElement('div');
+      text.className = 'pv-q-text';
+      text.textContent = qq.question || '';
+      card.appendChild(text);
+
+      (qq.options || []).forEach((opt, j) => {
+        const isCorrect = j === qq.correct;
+        const row = document.createElement('div');
+        row.className = 'pv-opt' + (isCorrect ? ' correct' : '');
+        const letter = document.createElement('span');
+        letter.className = 'pv-opt-letter';
+        letter.textContent = 'ABCD'[j] + '.';
+        const span = document.createElement('span');
+        span.textContent = opt;
+        row.appendChild(letter);
+        row.appendChild(span);
+        if (isCorrect) {
+          const tick = document.createElement('span');
+          tick.className = 'pv-tick';
+          tick.textContent = '✓ Correct';
+          row.appendChild(tick);
+        }
+        card.appendChild(row);
+      });
+      body.appendChild(card);
     });
+    if (!questions.length) {
+      body.innerHTML = '<div class="qm-list-empty">This quiz has no questions.</div>';
+    }
+  }
 
-    // 4th onwards as list
+  function closePreview() {
+    document.getElementById('preview-overlay').style.display = 'none';
+  }
+
+  // Close the preview on backdrop click or Escape.
+  document.getElementById('preview-overlay').addEventListener('click', e => {
+    if (e.target.id === 'preview-overlay') closePreview();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closePreview();
+  });
+
+  // Fetch the results workbook with the auth header, then trigger a browser
+  // download from the blob (a plain <a href> can't carry the Bearer token).
+  async function downloadResults() {
+    const btn = document.getElementById('btn-download-results');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/results.xlsx', { headers: authHeaders() });
+      if (!res.ok) {
+        let msg = 'Could not download the results.';
+        try { msg = (await res.json()).error || msg; } catch (e) {}
+        alert(msg);
+        return;
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const m = cd.match(/filename="?([^";]+)"?/);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = m ? m[1] : 'quiz_results.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (e) {
+      alert('Download failed. Please check your connection and try again.');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Select over HTTP, not the WebSocket: Manage Quizzes mode keeps the game
+  // socket closed, so a WS-only select silently does nothing there.
+  async function selectQuiz(id) {
+    try {
+      const res = await fetch(`/api/quiz/${id}/select`, { method: 'POST', headers: authHeaders() });
+      const result = await res.json();
+      if (!res.ok) { alert(result.error || 'Could not select this quiz.'); return; }
+      loadQuizList();
+    } catch (e) {
+      alert('Select failed. Please check your connection and try again.');
+    }
+  }
+
+  async function deleteQuiz(id, label) {
+    if (!confirm(`Delete "${label}"? It will be hidden from the quiz list (recoverable from the Google Sheet if needed).`)) return;
+    try {
+      const res = await fetch(`/api/quiz/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const result = await res.json();
+      if (!res.ok) { alert(result.error || 'Could not delete this quiz.'); return; }
+      loadQuizList();
+    } catch (e) {
+      alert('Delete failed. Please check your connection and try again.');
+    }
+  }
+
+  // ── Drag-and-drop upload ────────────────────────────────────────────────────
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('quiz-file');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => handleFileSelect(fileInput.files[0]));
+
+  ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    dropzone.classList.add('drag-over');
+  }));
+  ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation();
+    dropzone.classList.remove('drag-over');
+  }));
+  dropzone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFileSelect(f);
+  });
+
+  function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function handleFileSelect(file) {
+    if (!file) return;
+    const msgEl = document.getElementById('upload-msg');
+    if (!/\.xlsx$/i.test(file.name)) {
+      msgEl.textContent = 'Please choose a .xlsx file.';
+      msgEl.className = 'qm-msg err';
+      return;
+    }
+    msgEl.textContent = ''; msgEl.className = 'qm-msg';
+    selectedFile = file;
+    document.getElementById('file-picked-name').textContent = file.name;
+    document.getElementById('file-picked-size').textContent = formatBytes(file.size);
+    document.getElementById('file-picked').style.display = 'flex';
+    dropzone.style.display = 'none';
+    updateUploadBtnState();
+  }
+
+  function clearFileSelect() {
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('file-picked').style.display = 'none';
+    dropzone.style.display = 'block';
+    updateUploadBtnState();
+  }
+
+  // Build the copy-paste prompt for an AI assistant, filling in whatever has
+  // already been entered in the form and leaving the rest as placeholders.
+  function buildLLMPrompt() {
+    const subject = document.getElementById('quiz-subject-input').value.trim();
+    const topic   = document.getElementById('quiz-topic-input').value.trim();
+    return [
+      'Create the questions as shown in the attached Excel template. Replace the existing questions and clear the old entries. Follow the Guidelines sheet in the workbook and verify every guideline against the questions you generate. Shuffle the correct option randomly across A, B, C and D.',
+      '',
+      `Subject: ${subject || '[Subject]'}`,
+      `Topic: ${topic || '[Topic]'}`,
+      'Number of Questions: [Number]',
+      'Audience: QuantInsti team members (working professionals)',
+    ].join('\n');
+  }
+
+  function renderLLMPrompt() {
+    const el = document.getElementById('llm-prompt-text');
+    if (el) el.textContent = buildLLMPrompt();
+  }
+
+  async function copyLLMPrompt() {
+    const text = buildLLMPrompt();
+    const btn  = document.getElementById('llm-copy-btn');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      // Fallback for browsers/contexts where the async clipboard API is blocked.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e2) {}
+      ta.remove();
+    }
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+  }
+
+  function updateUploadBtnState() {
+    const subject = document.getElementById('quiz-subject-input').value.trim();
+    const topic = document.getElementById('quiz-topic-input').value.trim();
+    document.getElementById('btn-upload').disabled = !(subject && topic && selectedFile);
+    renderLLMPrompt();  // keep the AI prompt in sync as the fields are filled
+  }
+
+  async function uploadQuiz() {
+    const subjectInput = document.getElementById('quiz-subject-input');
+    const topicInput   = document.getElementById('quiz-topic-input');
+    const msgEl        = document.getElementById('upload-msg');
+    const btn          = document.getElementById('btn-upload');
+    const subject = subjectInput.value.trim();
+    const topic   = topicInput.value.trim();
+    if (!subject || !topic || !selectedFile) return;
+
+    msgEl.className = 'qm-msg'; msgEl.textContent = '';
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = 'Uploading…';
+
+    try {
+      const form = new FormData();
+      form.append('subject', subject);
+      form.append('topic', topic);
+      form.append('file', selectedFile);
+      const res = await fetch('/api/quiz/upload', { method: 'POST', body: form, headers: authHeaders() });
+      const result = await res.json();
+      if (!res.ok) {
+        msgEl.textContent = result.error || 'Something went wrong. Please try again.';
+        msgEl.classList.add('err');
+        btn.textContent = originalLabel;
+        updateUploadBtnState();
+        return;
+      }
+      msgEl.textContent = `Added to the Quiz Library: ${subject} · ${topic} (${result.count} question${result.count === 1 ? '' : 's'}).`;
+      msgEl.classList.add('ok');
+      subjectInput.value = ''; topicInput.value = '';
+      clearFileSelect();
+      btn.textContent = originalLabel;
+      loadQuizList();
+      showUploadedModal(subject, topic, result.count);
+    } catch (e) {
+      msgEl.textContent = 'Upload failed. Please check your connection and try again.';
+      msgEl.classList.add('err');
+      btn.textContent = originalLabel;
+      updateUploadBtnState();
+    }
+  }
+
+  // Prominent confirmation shown after a successful upload, so it is clear the
+  // quiz landed in the library and there is a direct way to jump to it.
+  function showUploadedModal(subject, topic, count) {
+    document.getElementById('uploaded-sub').textContent =
+      `${subject} · ${topic} — ${count} question${count === 1 ? '' : 's'}`;
+    document.getElementById('uploaded-overlay').style.display = 'flex';
+  }
+  function closeUploadedModal() {
+    document.getElementById('uploaded-overlay').style.display = 'none';
+  }
+  function viewLibraryFromModal() {
+    closeUploadedModal();
+    switchTab('quizlist');
+  }
+
+  // ── Final standings podium (staged reveal) ──────────────────────────────────
+
+  const AVATAR_COLORS = ['#173871', '#2e77c9', '#1b7f4d', '#0f2650', '#3b86d6', '#146239'];
+  function avatarColor(name) {
+    let h = 0;
+    for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function showPodium(lb) {
+    show('gameover');
+    QuizAudio.stopMusic();
+    toggleForceStop(true);
+    const sub    = document.getElementById('go-sub');
+    const banner = document.getElementById('champ-banner');
+    sub.textContent = 'Counting up the scores…';
+    banner.classList.remove('show');
+
+    ['p1', 'p2', 'p3'].forEach(cls => {
+      document.getElementById(`podium-slot-${cls}`).classList.remove('revealed');
+    });
+    document.getElementById('rest-list').innerHTML = '';
+
+    // 4th place onward shown immediately; the suspense belongs to the top three.
     lb.slice(3).forEach((p, i) => {
       const row = document.createElement('div');
       row.className = 'lb-row';
+      row.style.animationDelay = (i * .06) + 's';
       row.innerHTML = `
         <div class="lb-rank">${i + 4}</div>
-        <div class="lb-name">${p.name}</div>
+        <div class="lb-avatar" style="background:${avatarColor(p.name)}">${escHtml((p.name || '?').trim().charAt(0).toUpperCase())}</div>
+        <div class="lb-name">${escHtml(p.name)}</div>
         <div class="lb-score">${p.score.toLocaleString()}</div>`;
-      restEl.appendChild(row);
+      document.getElementById('rest-list').appendChild(row);
     });
+
+    await sleep(600);
+    await revealPodiumSpot(lb, 2, 'p3', '#2e77c9');
+    await sleep(850);
+    await revealPodiumSpot(lb, 1, 'p2', '#8b97a6');
+    await sleep(950);
+    await revealPodiumSpot(lb, 0, 'p1', '#ffdc57');
+
+    sub.textContent = 'Well played, everyone.';
+    if (lb[0]) {
+      banner.querySelector('.champ-name').textContent = lb[0].name;
+      banner.classList.add('show');
+    }
+    QuizAudio.fanfare();
+    burstConfetti(100);
+    setTimeout(() => burstConfetti(60), 1300);
+    setTimeout(() => burstConfetti(50), 2800);
+  }
+
+  async function revealPodiumSpot(lb, idx, cls, sparkColor) {
+    const p = lb[idx];
+    const col = document.getElementById(`podium-slot-${cls}`);
+    if (!p) return;
+    QuizAudio.podiumStep(idx + 1);
+    col.querySelector('.podium-avatar').textContent = (p.name || '?').trim().charAt(0).toUpperCase();
+    col.querySelector('.podium-name').textContent = p.name;
+    col.querySelector('.podium-pts').textContent = `${p.score.toLocaleString()} pts`;
+    col.classList.add('revealed');
+    const rect = col.getBoundingClientRect();
+    fireworkBurst(rect.left + rect.width / 2, rect.top + 20, sparkColor);
   }
 
   function forceStop() {
-    if (!confirm('Force stop the current game and return everyone to the lobby?')) return;
+    if (!confirm('Stop the quiz and send everyone back to the lobby?')) return;
     send({ action: 'force_stop' });
   }
+
+  function confirmReset() {
+    if (!confirm('Start a new session? This clears all participants and scores, and everyone will have to rejoin.')) return;
+    send({ action: 'reset' });
+  }
+
+  // Tiny build stamp so it is easy to confirm which version is live.
+  fetch('/api/version')
+    .then(r => r.json())
+    .then(d => { document.getElementById('version-tag').textContent = (d.instance ? d.instance + ' · ' : '') + 'v' + d.version; })
+    .catch(() => {});
+
+  // Auto-enter if a token is cached from a previous session. This runs LAST, after
+  // every module-level `let`/`const` is initialized — calling it earlier tripped a
+  // temporal-dead-zone error inside closeWS() (reconnectTimer) when the cached mode
+  // was "manager", which aborted applyMode() and left the panels blank.
+  (function bootstrap() {
+    const cachedToken = sessionStorage.getItem('hostToken');
+    const cachedName  = sessionStorage.getItem('hostName');
+    if (cachedToken && cachedName) {
+      enterApp();
+    } else {
+      showLogin();
+    }
+  })();
 </script>
+<div id="version-tag" style="position:fixed;bottom:6px;right:10px;z-index:50;font-size:11px;font-weight:500;color:var(--muted);opacity:.7;pointer-events:none;"></div>
 </body>
 </html>
