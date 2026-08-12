@@ -1095,7 +1095,8 @@
     ['p1', 'p2', 'p3'].forEach(cls => {
       document.getElementById(`p-podium-slot-${cls}`).classList.remove('revealed');
     });
-    renderLB(lb.slice(3), 'p-final', 3);
+    // Ranks 4 to 10 below the podium, plus my own row if I finished outside the top ten.
+    renderTopWithMe(lb, 'p-final', 3, 'took part');
 
     await sleep(400);
     await revealPodiumSpot(lb, 2, 'p3', '#2e77c9');
@@ -1191,23 +1192,23 @@
     renderStandings(lb.map((p, i) => ({ p, rank: i + rankOffset })), containerId);
   }
 
-  // Between questions, show only the top of the board -- but always append your own
-  // row when you are below the cut, otherwise a player in 47th place learns nothing
-  // about how they are doing.
+  // Only ever show the top of the board -- but always append your own row when you
+  // are below the cut, otherwise a player in 47th place learns nothing about how they
+  // are doing. fromRank lets the final screen start at 4th, since the top three are
+  // already on the podium above it.
   const LB_TOP_N = 10;
 
-  function renderTopWithMe(lb, containerId) {
-    const entries = lb.slice(0, LB_TOP_N).map((p, i) => ({ p, rank: i }));
+  function renderTopWithMe(lb, containerId, fromRank = 0, footer = 'playing') {
+    const entries = lb.slice(fromRank, LB_TOP_N).map((p, i) => ({ p, rank: i + fromRank }));
     const myRank = lb.findIndex(p => p.name === myName);
+    // Not when I'm on the podium: the final screen already shows me up there.
     if (myRank >= LB_TOP_N) entries.push({ p: lb[myRank], rank: myRank });
     renderStandings(entries, containerId);
-    const el = document.getElementById(containerId);
-    const rest = lb.length - LB_TOP_N - (myRank >= LB_TOP_N ? 1 : 0);
-    if (rest > 0) {
+    if (lb.length > LB_TOP_N) {
       const more = document.createElement('div');
       more.className = 'lb-more';
-      more.textContent = `${lb.length} playing`;
-      el.appendChild(more);
+      more.textContent = `${lb.length} ${footer}`;
+      document.getElementById(containerId).appendChild(more);
     }
   }
 </script>

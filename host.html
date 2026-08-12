@@ -2242,9 +2242,12 @@
     });
     document.getElementById('rest-list').innerHTML = '';
 
-    // 4th place onward shown immediately; the suspense belongs to the top three.
-    const restStep = rowStagger(Math.max(0, lb.length - 3));
-    lb.slice(3).forEach((p, i) => {
+    // Ranks 4 to 10 below the podium, shown immediately; the suspense belongs to the
+    // top three. Listing a whole room here is unreadable on a projected screen, and
+    // the downloaded workbook has everyone anyway.
+    const rest = lb.slice(3, LB_TOP_N);
+    const restStep = rowStagger(rest.length);
+    rest.forEach((p, i) => {
       const row = document.createElement('div');
       row.className = 'lb-row';
       row.style.animationDelay = (i * restStep) + 's';
@@ -2255,6 +2258,13 @@
         <div class="lb-score">${p.score.toLocaleString()}</div>`;
       document.getElementById('rest-list').appendChild(row);
     });
+    const others = lb.length - LB_TOP_N;
+    if (others > 0) {
+      const more = document.createElement('div');
+      more.className = 'lb-more';
+      more.textContent = `and ${others} more ${others === 1 ? 'participant' : 'participants'} — full results in the download`;
+      document.getElementById('rest-list').appendChild(more);
+    }
 
     await sleep(600);
     await revealPodiumSpot(lb, 2, 'p3', '#2e77c9');
