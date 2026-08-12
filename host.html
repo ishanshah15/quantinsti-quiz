@@ -1594,10 +1594,11 @@
     setTimeout(apply, 120);
   }
 
-  // Between questions the room only cares about the top of the board. Showing every
-  // player turns the projected screen into a wall of names nobody can read, so cap
-  // it and just say how many others are playing.
-  const LB_TOP_N = 10;
+  // The room only cares about the top of the board. Showing every player turns the
+  // projected screen into a wall of names nobody can read, so cap it and just say how
+  // many others are playing. Five keeps the whole board readable at a glance from the
+  // back of a room, and the download carries everyone.
+  const LB_TOP_N = 5;
 
   function showLB(lb, progress) {
     QuizAudio.stopMusic();

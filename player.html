@@ -1196,7 +1196,7 @@
   // are below the cut, otherwise a player in 47th place learns nothing about how they
   // are doing. fromRank lets the final screen start at 4th, since the top three are
   // already on the podium above it.
-  const LB_TOP_N = 10;
+  const LB_TOP_N = 5;
 
   function renderTopWithMe(lb, containerId, fromRank = 0, footer = 'playing') {
     const entries = lb.slice(fromRank, LB_TOP_N).map((p, i) => ({ p, rank: i + fromRank }));
