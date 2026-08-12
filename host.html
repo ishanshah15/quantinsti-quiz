@@ -1600,9 +1600,10 @@
       progress && progress.total ? `Question ${progress.current} of ${progress.total} completed` : '';
     const el = document.getElementById('lb');
     el.innerHTML = '';
+    const step = rowStagger(lb.length);
     lb.forEach((p, i) => {
       const row = document.createElement('div');
-      row.className = 'lb-row'; row.style.animationDelay = (i * .06) + 's';
+      row.className = 'lb-row'; row.style.animationDelay = (i * step) + 's';
       const rC = i < 3 ? ` r${i+1}` : '';
       row.innerHTML = `
         <div class="lb-rank${rC}">${i+1}</div>
@@ -2201,6 +2202,15 @@
   const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+  // Per-row delay for the leaderboard cascade. A fixed 0.06s per row looks good for
+  // a dozen people but means the 250th row waits 15 seconds, which reads as a broken
+  // page. Compress the step so the whole list always lands inside STAGGER_BUDGET,
+  // while small lists keep the original feel.
+  const STAGGER_BUDGET = 0.9;
+  function rowStagger(count) {
+    return Math.min(0.06, STAGGER_BUDGET / Math.max(1, count));
+  }
+
   async function showPodium(lb) {
     show('gameover');
     QuizAudio.stopMusic();
@@ -2216,10 +2226,11 @@
     document.getElementById('rest-list').innerHTML = '';
 
     // 4th place onward shown immediately; the suspense belongs to the top three.
+    const restStep = rowStagger(Math.max(0, lb.length - 3));
     lb.slice(3).forEach((p, i) => {
       const row = document.createElement('div');
       row.className = 'lb-row';
-      row.style.animationDelay = (i * .06) + 's';
+      row.style.animationDelay = (i * restStep) + 's';
       row.innerHTML = `
         <div class="lb-rank">${i + 4}</div>
         <div class="lb-avatar" style="background:${avatarColor(p.name)}">${escHtml((p.name || '?').trim().charAt(0).toUpperCase())}</div>

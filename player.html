@@ -1126,15 +1126,21 @@
   const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+  // Per-row delay for the leaderboard cascade. A fixed step looks good for a dozen
+  // people but means the 250th row waits over ten seconds, which reads as a broken
+  // page. Compress it so the whole list always lands inside this budget.
+  const STAGGER_BUDGET = 0.8;
+
   // rankOffset lets the final screen render "4th place onward" with true ranks
   function renderLB(lb, containerId, rankOffset = 0) {
     const el = document.getElementById(containerId);
     el.innerHTML = '';
+    const step = Math.min(0.05, STAGGER_BUDGET / Math.max(1, lb.length));
     lb.forEach((p, i) => {
       const rank = i + rankOffset;
       const row = document.createElement('div');
       row.className = 'lb-row' + (p.name === myName ? ' me' : '');
-      row.style.animationDelay = (i * .05) + 's';
+      row.style.animationDelay = (i * step) + 's';
       const rC = rank < 3 ? ` r${rank+1}` : '';
       row.innerHTML = `
         <div class="lb-rank${rC}">${rank+1}</div>
