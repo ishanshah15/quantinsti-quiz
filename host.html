@@ -315,6 +315,10 @@
     .lb-rank.r1{color:var(--yellow-dark)} .lb-rank.r2{color:#7b8794} .lb-rank.r3{color:#a06a3c}
     .lb-name  { flex: 1; font-size: 17px; font-weight: 600; color: var(--text); }
     .lb-score { font-size: 18px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .lb-more {
+      text-align: center; padding: 10px 0 2px; color: var(--muted);
+      font-size: 13px; font-weight: 500;
+    }
 
     /* ── FINAL STANDINGS: PODIUM ── */
     .go-hero { text-align: center; margin-bottom: 24px; }
@@ -1590,6 +1594,11 @@
     setTimeout(apply, 120);
   }
 
+  // Between questions the room only cares about the top of the board. Showing every
+  // player turns the projected screen into a wall of names nobody can read, so cap
+  // it and just say how many others are playing.
+  const LB_TOP_N = 10;
+
   function showLB(lb, progress) {
     QuizAudio.stopMusic();
     QuizAudio.leaderboard();
@@ -1600,8 +1609,9 @@
       progress && progress.total ? `Question ${progress.current} of ${progress.total} completed` : '';
     const el = document.getElementById('lb');
     el.innerHTML = '';
-    const step = rowStagger(lb.length);
-    lb.forEach((p, i) => {
+    const shown = lb.slice(0, LB_TOP_N);
+    const step = rowStagger(shown.length);
+    shown.forEach((p, i) => {
       const row = document.createElement('div');
       row.className = 'lb-row'; row.style.animationDelay = (i * step) + 's';
       const rC = i < 3 ? ` r${i+1}` : '';
@@ -1612,6 +1622,13 @@
         <div class="lb-score">${Number(p.score || 0).toLocaleString()}</div>`;
       el.appendChild(row);
     });
+    const rest = lb.length - shown.length;
+    if (rest > 0) {
+      const more = document.createElement('div');
+      more.className = 'lb-more';
+      more.textContent = `and ${rest} more ${rest === 1 ? 'participant' : 'participants'}`;
+      el.appendChild(more);
+    }
   }
 
   // ── Confetti & fireworks, in QI brand colours ───────────────────────────────

@@ -64,7 +64,11 @@
       background: var(--surface); border: 1px solid var(--border-soft);
       border-radius: 100px; padding: 7px 16px;
       font-size: 12px; font-weight: 600; color: var(--navy);
-      text-align: center; margin: 14px auto 0; max-width: calc(100% - 32px);
+      text-align: center; margin: 14px auto 0;
+      /* Leave the top-right corner clear for the floating sound toggle, and
+         truncate rather than wrap underneath it on a narrow phone. */
+      max-width: calc(100% - 160px);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     /* ── JOIN ── */
@@ -329,6 +333,8 @@
     .lb-rank.r1{color:var(--yellow-dark)} .lb-rank.r2{color:#7b8794} .lb-rank.r3{color:#a06a3c}
     .lb-name  { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
     .lb-score { font-size: 15px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .lb-gap   { text-align: center; color: var(--muted); font-size: 14px; letter-spacing: 2px; padding: 2px 0; }
+    .lb-more  { text-align: center; color: var(--muted); font-size: 12px; font-weight: 500; padding: 8px 0 2px; }
 
     /* ── FINAL STANDINGS (participant) ── */
     .go-inner {
@@ -426,7 +432,7 @@
       animation: sparkOut .8s ease-out forwards;
     }
 
-    /* Sound toggle, top-right and out of the way of everything else */
+    /* Sound toggle, top-right on the screens that have room for it. */
     .btn-sound {
       position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 10px; z-index: 120;
       display: inline-flex; align-items: center; gap: 5px;
@@ -436,6 +442,19 @@
     }
     .btn-sound.off { color: var(--muted); }
     .btn-sound svg { flex-shrink: 0; }
+
+    /* The question screen puts the timer in the top-right corner, which the floating
+       pill would sit directly on top of. There, the toggle lives inside the topbar
+       instead, as an icon, so the timer is never covered. */
+    body.on-question .btn-sound { display: none; }
+    .btn-sound-q {
+      display: none; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 30px; height: 30px; padding: 0;
+      border: 1px solid var(--border-soft); background: var(--surface); color: var(--navy);
+      border-radius: 50%; cursor: pointer;
+    }
+    body.on-question .btn-sound-q { display: inline-flex; }
+    .btn-sound-q.off { color: var(--muted); }
     @keyframes sparkOut {
       0%   { transform: translate(0,0) scale(1); opacity: 1; }
       100% { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; }
@@ -511,6 +530,7 @@
     <div class="q-topbar">
       <div class="q-badge">Q <span id="p-qn">1</span>/<span id="p-qt">10</span></div>
       <div class="q-topic" id="q-topic"></div>
+      <button id="btn-sound-q" class="btn-sound-q" onclick="toggleSound()" aria-label="Turn sound on or off"></button>
       <div class="t-num" id="p-t">20</div>
     </div>
     <div class="prog-track"><div class="prog-bar" id="p-bar"></div></div>
@@ -630,10 +650,14 @@
   const ICON_SOUND_OFF = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>';
 
   function renderSoundBtn() {
-    const btn = document.getElementById('btn-sound');
     const on = QuizAudio.isEnabled();
+    const btn = document.getElementById('btn-sound');
     btn.classList.toggle('off', !on);
     btn.innerHTML = (on ? ICON_SOUND_ON : ICON_SOUND_OFF) + '<span>' + (on ? 'Sound' : 'Muted') + '</span>';
+    // The question screen's own icon-only copy of the same control.
+    const q = document.getElementById('btn-sound-q');
+    q.classList.toggle('off', !on);
+    q.innerHTML = on ? ICON_SOUND_ON : ICON_SOUND_OFF;
   }
   function toggleSound() { QuizAudio.toggle(); renderSoundBtn(); }
   renderSoundBtn();
@@ -753,6 +777,8 @@
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`s-${id}`).classList.add('active');
+    // Drives which copy of the sound toggle is visible; see .btn-sound-q in the CSS.
+    document.body.classList.toggle('on-question', id === 'question');
     // The question screen shows subject/topic inside its own topbar instead, so
     // the bar stays hidden there to give the question every pixel of height.
     const pill = document.getElementById('quiz-pill');
@@ -817,7 +843,7 @@
         break;
       case 'leaderboard':
         QuizAudio.leaderboard();
-        renderLB(msg.leaderboard, 'p-lb');
+        renderTopWithMe(msg.leaderboard, 'p-lb');
         document.getElementById('p-lb-progress').textContent =
           msg.total ? `Question ${msg.current} of ${msg.total} completed` : '';
         show('leaderboard');
@@ -1131,24 +1157,58 @@
   // page. Compress it so the whole list always lands inside this budget.
   const STAGGER_BUDGET = 0.8;
 
-  // rankOffset lets the final screen render "4th place onward" with true ranks
-  function renderLB(lb, containerId, rankOffset = 0) {
+  /** Render rows from [{p, rank}] pairs, so callers control the real rank numbers. */
+  function renderStandings(entries, containerId) {
     const el = document.getElementById(containerId);
     el.innerHTML = '';
-    const step = Math.min(0.05, STAGGER_BUDGET / Math.max(1, lb.length));
-    lb.forEach((p, i) => {
-      const rank = i + rankOffset;
+    const step = Math.min(0.05, STAGGER_BUDGET / Math.max(1, entries.length));
+    let prevRank = null;
+    entries.forEach((e, i) => {
+      // A break in the rank sequence means rows were left out in between.
+      if (prevRank !== null && e.rank > prevRank + 1) {
+        const gap = document.createElement('div');
+        gap.className = 'lb-gap';
+        gap.textContent = '···';
+        el.appendChild(gap);
+      }
+      prevRank = e.rank;
+      const p = e.p;
       const row = document.createElement('div');
       row.className = 'lb-row' + (p.name === myName ? ' me' : '');
       row.style.animationDelay = (i * step) + 's';
-      const rC = rank < 3 ? ` r${rank+1}` : '';
+      const rC = e.rank < 3 ? ` r${e.rank+1}` : '';
       row.innerHTML = `
-        <div class="lb-rank${rC}">${rank+1}</div>
+        <div class="lb-rank${rC}">${e.rank+1}</div>
         <div class="lb-avatar" style="background:${avatarColor(p.name)}">${escHtml((p.name || '?').trim().charAt(0).toUpperCase())}</div>
         <div class="lb-name">${escHtml(p.name)}${p.name === myName ? ' (You)' : ''}</div>
-        <div class="lb-score">${p.score.toLocaleString()}</div>`;
+        <div class="lb-score">${Number(p.score || 0).toLocaleString()}</div>`;
       el.appendChild(row);
     });
+  }
+
+  // rankOffset lets the final screen render "4th place onward" with true ranks
+  function renderLB(lb, containerId, rankOffset = 0) {
+    renderStandings(lb.map((p, i) => ({ p, rank: i + rankOffset })), containerId);
+  }
+
+  // Between questions, show only the top of the board -- but always append your own
+  // row when you are below the cut, otherwise a player in 47th place learns nothing
+  // about how they are doing.
+  const LB_TOP_N = 10;
+
+  function renderTopWithMe(lb, containerId) {
+    const entries = lb.slice(0, LB_TOP_N).map((p, i) => ({ p, rank: i }));
+    const myRank = lb.findIndex(p => p.name === myName);
+    if (myRank >= LB_TOP_N) entries.push({ p: lb[myRank], rank: myRank });
+    renderStandings(entries, containerId);
+    const el = document.getElementById(containerId);
+    const rest = lb.length - LB_TOP_N - (myRank >= LB_TOP_N ? 1 : 0);
+    if (rest > 0) {
+      const more = document.createElement('div');
+      more.className = 'lb-more';
+      more.textContent = `${lb.length} playing`;
+      el.appendChild(more);
+    }
   }
 </script>
 </body>
